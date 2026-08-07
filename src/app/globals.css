@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f7f9;
+  --foreground: #1b2129;
+  --panel: #ffffff;
+  --border: #dde2e8;
+  --muted: #6b7684;
+  --accent: #b0722f;
+  --accent-foreground: #ffffff;
+  --accent-soft: #f3e6d5;
+  --warn: #b3492f;
+  --warn-soft: #fbe6e0;
+  --font-body: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic",
+    Meiryo, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-body);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #14181f;
+    --foreground: #eef1f4;
+    --panel: #1b212b;
+    --border: #2c333e;
+    --muted: #8b95a3;
+    --accent: #d99a5c;
+    --accent-foreground: #241704;
+    --accent-soft: #3a2c1a;
+    --warn: #e08669;
+    --warn-soft: #3a2420;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
