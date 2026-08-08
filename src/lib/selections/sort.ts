@@ -14,7 +14,7 @@ export const SELECTION_SORT_OPTIONS = [
 
 export type SelectionSortKey = (typeof SELECTION_SORT_OPTIONS)[number]["value"];
 
-export const DEFAULT_SELECTION_SORT: SelectionSortKey = "fitScoreDesc";
+export const DEFAULT_SELECTION_SORT: SelectionSortKey = "createdDesc";
 
 export function sortSelections(
   selections: Selection[],
