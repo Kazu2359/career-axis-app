@@ -42,12 +42,14 @@ const STATUS_HEADERS = ["ステータス", "status"];
 const INDUSTRY_MAJOR_HEADERS = [
   "業界",
   "業界大分類",
+  "業界・大分類",
   "業界（大分類）",
   "industry_major",
   "industrymajor",
 ];
 const INDUSTRY_TYPE_MAJOR_HEADERS = [
   "業種大分類",
+  "業種・大分類",
   "業種（大分類）",
   "業種",
   "industry_type_major",
@@ -55,6 +57,7 @@ const INDUSTRY_TYPE_MAJOR_HEADERS = [
 ];
 const INDUSTRY_MINOR_HEADERS = [
   "業種中分類",
+  "業種・中分類",
   "業種（中分類）",
   "中分類",
   "industry",
