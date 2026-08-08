@@ -117,9 +117,9 @@ export default function SelectionsListPage() {
   return (
     <AxisShell>
       <AppNav />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3">
         <h1 className="text-xl font-bold text-foreground">選考プロセス</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SecondaryButton
             type="button"
             onClick={() => {
@@ -155,7 +155,7 @@ export default function SelectionsListPage() {
           </Link>
         </div>
       </div>
-      <p className="-mt-4 text-xs text-muted">
+      <p className="text-xs text-muted">
         CSVは「企業名,職種,ステータス」の列（1行目はヘッダー）。企業名が一致する行は上書き更新されます。
         {wantCategories.length > 0 && (
           <>
