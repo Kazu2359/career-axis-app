@@ -7,8 +7,9 @@ import { AppNav } from "@/components/app/AppNav";
 import { WideShell, ErrorBanner } from "@/components/axis/ui";
 import { IndustryMapView } from "./IndustryMapView";
 import { PositionMapView } from "./PositionMapView";
+import { HeatmapView } from "./HeatmapView";
 
-type Tab = "industry" | "position";
+type Tab = "industry" | "position" | "heatmap";
 
 export default function IndustriesPage() {
   const [tab, setTab] = useState<Tab>("industry");
@@ -34,6 +35,7 @@ export default function IndustriesPage() {
           [
             { key: "industry", label: "業界" },
             { key: "position", label: "職種" },
+            { key: "heatmap", label: "ヒートマップ" },
           ] as const
         ).map((t) => (
           <button
@@ -60,21 +62,23 @@ export default function IndustriesPage() {
         </p>
       )}
 
-      {!loading &&
-        selections.length > 0 &&
-        (tab === "industry" ? (
-          <IndustryMapView
-            selections={selections}
-            setSelections={setSelections}
-            setError={setError}
-          />
-        ) : (
-          <PositionMapView
-            selections={selections}
-            setSelections={setSelections}
-            setError={setError}
-          />
-        ))}
+      {!loading && selections.length > 0 && tab === "industry" && (
+        <IndustryMapView
+          selections={selections}
+          setSelections={setSelections}
+          setError={setError}
+        />
+      )}
+      {!loading && selections.length > 0 && tab === "position" && (
+        <PositionMapView
+          selections={selections}
+          setSelections={setSelections}
+          setError={setError}
+        />
+      )}
+      {!loading && selections.length > 0 && tab === "heatmap" && (
+        <HeatmapView selections={selections} />
+      )}
     </WideShell>
   );
 }
