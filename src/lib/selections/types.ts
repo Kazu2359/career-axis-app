@@ -33,6 +33,7 @@ export interface Selection {
   id: string;
   companyName: string;
   position: string;
+  industry: string | null;
   status: SelectionStatus;
   mustConditionCheck: Record<string, boolean> | null;
   wantFitScores: Record<string, number> | null;

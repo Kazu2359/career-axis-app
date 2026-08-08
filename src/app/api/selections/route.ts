@@ -7,6 +7,7 @@ interface SelectionRow {
   id: string;
   company_name: string;
   position: string;
+  industry: string | null;
   status: string;
   must_condition_check: Record<string, boolean> | null;
   want_fit_scores: Record<string, number> | null;
@@ -19,6 +20,7 @@ function rowToSelection(row: SelectionRow): Selection {
     id: row.id,
     companyName: row.company_name,
     position: row.position,
+    industry: row.industry,
     status: row.status as Selection["status"],
     mustConditionCheck: row.must_condition_check,
     wantFitScores: row.want_fit_scores,
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("selections")
     .select(
-      "id, company_name, position, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
   const lengthError = findLengthViolation([
     ["companyName", body.companyName, 200],
     ["position", body.position, 200],
+    ["industry", body.industry ?? undefined, 50],
   ]);
   if (lengthError) return apiError("VALIDATION_ERROR", lengthError);
 
@@ -77,10 +80,11 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       company_name: body.companyName,
       position: body.position ?? "",
+      industry: body.industry ?? null,
       status: body.status ?? "応募",
     })
     .select(
-      "id, company_name, position, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .single<SelectionRow>();
 

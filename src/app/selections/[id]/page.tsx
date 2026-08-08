@@ -12,6 +12,7 @@ import {
 import { axisApi } from "@/lib/axis/api";
 import type { MustCondition, WantCategory } from "@/lib/axis/types";
 import type { Schedule } from "@/lib/schedules/types";
+import { INDUSTRIES } from "@/lib/selections/industry";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -63,6 +64,7 @@ export default function SelectionDetailPage() {
       const updated = await selectionsApi.update(id, {
         companyName: selection.companyName,
         position: selection.position,
+        industry: selection.industry,
         status: selection.status,
       });
       setSelection(updated);
@@ -162,6 +164,25 @@ export default function SelectionDetailPage() {
           }
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
+      </Field>
+      <Field label="業界">
+        <select
+          value={selection.industry ?? ""}
+          onChange={(e) =>
+            setSelection({
+              ...selection,
+              industry: e.target.value || null,
+            })
+          }
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">未設定</option>
+          {INDUSTRIES.map((i) => (
+            <option key={i} value={i}>
+              {i}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="ステータス">
         <select

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { selectionsApi } from "@/lib/selections/api";
+import { INDUSTRIES, guessIndustry } from "@/lib/selections/industry";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -16,15 +17,27 @@ export default function NewSelectionPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [position, setPosition] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [industryTouched, setIndustryTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleCompanyNameBlur() {
+    if (industryTouched || industry) return;
+    const guessed = guessIndustry(companyName);
+    if (guessed) setIndustry(guessed);
+  }
 
   async function handleCreate() {
     if (!companyName.trim()) return;
     setSaving(true);
     setError(null);
     try {
-      const created = await selectionsApi.create({ companyName, position });
+      const created = await selectionsApi.create({
+        companyName,
+        position,
+        industry: industry || null,
+      });
       router.push(`/selections/${created.id}`);
     } catch {
       setError("登録に失敗しました。");
@@ -43,6 +56,7 @@ export default function NewSelectionPage() {
         <input
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
+          onBlur={handleCompanyNameBlur}
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </Field>
@@ -52,6 +66,23 @@ export default function NewSelectionPage() {
           onChange={(e) => setPosition(e.target.value)}
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
+      </Field>
+      <Field label="業界（任意・企業名から自動推定、変更可）">
+        <select
+          value={industry}
+          onChange={(e) => {
+            setIndustry(e.target.value);
+            setIndustryTouched(true);
+          }}
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">未設定</option>
+          {INDUSTRIES.map((i) => (
+            <option key={i} value={i}>
+              {i}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <div className="flex gap-2">

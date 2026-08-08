@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/axis/card", label: "軸カード" },
   { href: "/selections", label: "選考プロセス" },
   { href: "/board", label: "進捗ボード" },
+  { href: "/industries", label: "業界マップ" },
   { href: "/schedules", label: "スケジュール" },
 ];
 

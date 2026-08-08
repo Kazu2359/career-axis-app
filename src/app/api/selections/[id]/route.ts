@@ -7,6 +7,7 @@ interface SelectionRow {
   id: string;
   company_name: string;
   position: string;
+  industry: string | null;
   status: string;
   must_condition_check: Record<string, boolean> | null;
   want_fit_scores: Record<string, number> | null;
@@ -19,6 +20,7 @@ function rowToSelection(row: SelectionRow): Selection {
     id: row.id,
     companyName: row.company_name,
     position: row.position,
+    industry: row.industry,
     status: row.status as Selection["status"],
     mustConditionCheck: row.must_condition_check,
     wantFitScores: row.want_fit_scores,
@@ -37,7 +39,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { data, error } = await supabase
     .from("selections")
     .select(
-      "id, company_name, position, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -66,12 +68,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const lengthError = findLengthViolation([
     ["companyName", body.companyName, 200],
     ["position", body.position, 200],
+    ["industry", body.industry ?? undefined, 50],
   ]);
   if (lengthError) return apiError("VALIDATION_ERROR", lengthError);
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (body.companyName !== undefined) update.company_name = body.companyName;
   if (body.position !== undefined) update.position = body.position;
+  if (body.industry !== undefined) update.industry = body.industry;
   if (body.status !== undefined) update.status = body.status;
 
   const { data, error } = await supabase
@@ -80,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, company_name, position, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .maybeSingle<SelectionRow>();
 
