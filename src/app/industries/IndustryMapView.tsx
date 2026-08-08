@@ -7,7 +7,6 @@ import type { Selection } from "@/lib/selections/types";
 import { statusBadgeClasses } from "@/lib/selections/types";
 import { guessIndustry, guessIndustryType } from "@/lib/selections/industry";
 import { SecondaryButton } from "@/components/axis/ui";
-import { BubbleTooltip } from "./BubbleTooltip";
 
 const INDUSTRY_COLORS: Record<string, string> = {
   "IT・ソフトウェア":
@@ -273,41 +272,22 @@ export function IndustryMapView({
             {bubbles.map((b, i) => {
               const size = sizeFor(b.count, majorMaxCount);
               return (
-                <BubbleTooltip
+                <button
                   key={b.industry}
-                  content={
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between gap-3 font-semibold">
-                        <span>{b.industry}</span>
-                        <span>{b.count}件</span>
-                      </div>
-                      {b.offerCount > 0 && (
-                        <span className="text-accent">内定 {b.offerCount}件</span>
-                      )}
-                      {b.minorBreakdown.length > 0 && (
-                        <span className="text-muted">
-                          内訳：{b.minorBreakdown.join("、")}
-                        </span>
-                      )}
-                      <span className="text-muted">クリックで業種・大分類の内訳を表示</span>
-                    </div>
+                  type="button"
+                  onClick={() => handleDrillMajor(b.industry)}
+                  title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}\nクリックで業種・大分類の内訳を表示`}
+                  style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
+                  className={
+                    "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                    colorFor(b.industry)
                   }
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleDrillMajor(b.industry)}
-                    style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
-                    className={
-                      "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                      colorFor(b.industry)
-                    }
-                  >
-                    <span className="px-2 text-xs font-semibold leading-tight">
-                      {b.industry}
-                    </span>
-                    <span className="text-lg font-bold">{b.count}</span>
-                  </button>
-                </BubbleTooltip>
+                  <span className="px-2 text-xs font-semibold leading-tight">
+                    {b.industry}
+                  </span>
+                  <span className="text-lg font-bold">{b.count}</span>
+                </button>
               );
             })}
           </div>
@@ -325,39 +305,26 @@ export function IndustryMapView({
               {typeBubbles.map((b, i) => {
                 const size = sizeFor(b.count, typeMaxCount);
                 return (
-                  <BubbleTooltip
+                  <button
                     key={b.type}
-                    content={
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-3 font-semibold">
-                          <span>{b.type}</span>
-                          <span>{b.count}件</span>
-                        </div>
-                        <span className="text-muted">
-                          クリックで業種・中分類の内訳を表示
-                        </span>
-                      </div>
+                    type="button"
+                    onClick={() => handleDrillType(b.type)}
+                    title={`${b.type}：${b.count}件\nクリックで業種・中分類の内訳を表示`}
+                    style={{
+                      width: size,
+                      height: size,
+                      animationDelay: `${(i + 1) * 30}ms`,
+                    }}
+                    className={
+                      "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                      colorFor(drilledBubble.industry)
                     }
                   >
-                    <button
-                      type="button"
-                      onClick={() => handleDrillType(b.type)}
-                      style={{
-                        width: size,
-                        height: size,
-                        animationDelay: `${(i + 1) * 30}ms`,
-                      }}
-                      className={
-                        "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                        colorFor(drilledBubble.industry)
-                      }
-                    >
-                      <span className="px-2 text-xs font-semibold leading-tight">
-                        {b.type}
-                      </span>
-                      <span className="text-lg font-bold">{b.count}</span>
-                    </button>
-                  </BubbleTooltip>
+                    <span className="px-2 text-xs font-semibold leading-tight">
+                      {b.type}
+                    </span>
+                    <span className="text-lg font-bold">{b.count}</span>
+                  </button>
                 );
               })}
             </div>
@@ -383,42 +350,31 @@ export function IndustryMapView({
                 const size = sizeFor(b.count, minorMaxCount);
                 const isSelected = b.minor === selectedMinor;
                 return (
-                  <BubbleTooltip
+                  <button
                     key={b.minor}
-                    content={
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-3 font-semibold">
-                          <span>{b.minor}</span>
-                          <span>{b.count}件</span>
-                        </div>
-                        <span className="text-muted">クリックで企業一覧を表示</span>
-                      </div>
+                    type="button"
+                    onClick={() =>
+                      setSelectedMinor((cur) => (cur === b.minor ? null : b.minor))
+                    }
+                    title={`${b.minor}：${b.count}件\nクリックで企業一覧を表示`}
+                    style={{
+                      width: size,
+                      height: size,
+                      animationDelay: `${(i + 1) * 30}ms`,
+                    }}
+                    className={
+                      "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                      colorFor(drilledBubble.industry) +
+                      (isSelected
+                        ? " ring-4 ring-accent ring-offset-2 ring-offset-panel"
+                        : "")
                     }
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedMinor((cur) => (cur === b.minor ? null : b.minor))
-                      }
-                      style={{
-                        width: size,
-                        height: size,
-                        animationDelay: `${(i + 1) * 30}ms`,
-                      }}
-                      className={
-                        "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                        colorFor(drilledBubble.industry) +
-                        (isSelected
-                          ? " ring-4 ring-accent ring-offset-2 ring-offset-panel"
-                          : "")
-                      }
-                    >
-                      <span className="px-2 text-xs font-semibold leading-tight">
-                        {b.minor}
-                      </span>
-                      <span className="text-lg font-bold">{b.count}</span>
-                    </button>
-                  </BubbleTooltip>
+                    <span className="px-2 text-xs font-semibold leading-tight">
+                      {b.minor}
+                    </span>
+                    <span className="text-lg font-bold">{b.count}</span>
+                  </button>
                 );
               })}
             </div>
