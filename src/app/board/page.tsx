@@ -323,7 +323,7 @@ export default function BoardPage() {
         </div>
       )}
 
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {SELECTION_STATUSES.map((status) => {
           const items = selections.filter((s) => s.status === status);
           return (
@@ -344,7 +344,7 @@ export default function BoardPage() {
                 if (id) handleDrop(status, id);
               }}
               className={
-                "flex w-64 shrink-0 flex-col gap-2 rounded-xl p-1.5 transition-colors " +
+                "flex w-48 shrink-0 flex-col gap-2 rounded-xl p-1.5 transition-colors " +
                 (dragOverStatus === status
                   ? "bg-accent-soft"
                   : "bg-transparent")
