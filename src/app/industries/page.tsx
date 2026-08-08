@@ -384,10 +384,10 @@ export default function IndustriesPage() {
                     href={`/selections/${s.id}`}
                     className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-accent"
                   >
-                    <span className="text-foreground">
-                      {s.companyName}
+                    <span className="flex flex-col">
+                      <span className="text-foreground">{s.companyName}</span>
                       {s.position && (
-                        <span className="ml-1.5 text-xs text-muted">{s.position}</span>
+                        <span className="text-xs text-muted">{s.position}</span>
                       )}
                     </span>
                     <span
