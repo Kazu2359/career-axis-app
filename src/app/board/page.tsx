@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { selectionsApi } from "@/lib/selections/api";
 import { schedulesApi } from "@/lib/schedules/api";
 import {
@@ -50,7 +50,7 @@ interface Milestone {
   achieved: boolean;
 }
 
-function computeMilestones(selections: Selection[]): Milestone[] {
+function computeQuestPath(selections: Selection[]): Milestone[] {
   function reachedAtLeast(status: SelectionStatus): boolean {
     const idx = FUNNEL_STATUSES.indexOf(status);
     return selections.some((s) => FUNNEL_STATUSES.indexOf(s.status) >= idx);
@@ -77,8 +77,18 @@ function computeMilestones(selections: Selection[]): Milestone[] {
       label: "初内定",
       achieved: selections.some((s) => s.status === "内定"),
     },
+  ];
+}
+
+function computeBadges(selections: Selection[]): Milestone[] {
+  return [
     { key: "five-apps", label: "5社応募", achieved: selections.length >= 5 },
     { key: "ten-apps", label: "10社応募", achieved: selections.length >= 10 },
+    {
+      key: "thirty-apps",
+      label: "30社応募",
+      achieved: selections.length >= 30,
+    },
   ];
 }
 
@@ -216,7 +226,10 @@ export default function BoardPage() {
   const rejectedCount = selections.filter((s) => s.status === "不採用").length;
   const declinedCount = selections.filter((s) => s.status === "辞退").length;
 
-  const milestones = computeMilestones(selections);
+  const questPath = computeQuestPath(selections);
+  const badges = computeBadges(selections);
+  const questProgress = questPath.filter((m) => m.achieved).length;
+  const currentQuestIndex = questPath.findIndex((m) => !m.achieved);
 
   return (
     <WideShell className="max-w-[1650px]">
@@ -324,27 +337,81 @@ export default function BoardPage() {
             )}
           </div>
 
-          <div className="rounded-lg border border-border bg-panel px-4 py-3">
-            <h2 className="mb-2 text-sm font-semibold text-foreground">
-              マイルストーン
-            </h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {milestones.map((m) => (
-                <div
-                  key={m.key}
-                  className={
-                    "flex flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-xs " +
-                    (m.achieved
-                      ? "border-accent bg-accent-soft text-foreground"
-                      : "border-border text-muted opacity-50")
-                  }
-                >
-                  <span className="font-medium">{m.label}</span>
-                  <span className="text-[10px]">
-                    {m.achieved ? "達成" : "未達成"}
-                  </span>
-                </div>
+          <div className="rounded-lg border border-border bg-panel px-4 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                選考クエストロード
+              </h2>
+              <span className="text-xs text-muted">
+                {questProgress}/{questPath.length} クリア
+              </span>
+            </div>
+            <div className="flex items-start">
+              {questPath.map((m, i) => (
+                <Fragment key={m.key}>
+                  <div className="flex w-16 shrink-0 flex-col items-center gap-1.5 text-center">
+                    <div
+                      className={
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold " +
+                        (m.achieved
+                          ? "border-accent bg-accent text-white"
+                          : i === currentQuestIndex
+                            ? "animate-pulse border-accent bg-panel text-base ring-4 ring-accent-soft"
+                            : "border-border bg-background text-muted")
+                      }
+                    >
+                      {m.achieved ? "✓" : i === currentQuestIndex ? "🚩" : "🔒"}
+                    </div>
+                    <span
+                      className={
+                        "text-[11px] leading-tight " +
+                        (m.achieved || i === currentQuestIndex
+                          ? "font-medium text-foreground"
+                          : "text-muted")
+                      }
+                    >
+                      {m.label}
+                    </span>
+                  </div>
+                  {i < questPath.length - 1 && (
+                    <div
+                      className={
+                        "mt-5 h-1 flex-1 rounded transition-colors " +
+                        (m.achieved ? "bg-accent" : "bg-border")
+                      }
+                    />
+                  )}
+                </Fragment>
               ))}
+            </div>
+
+            <div className="mt-5 border-t border-border pt-4">
+              <h3 className="mb-2 text-xs font-semibold text-muted">
+                実績バッジ
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {badges.map((b) => (
+                  <div
+                    key={b.key}
+                    className={
+                      "flex flex-col items-center gap-1 rounded-lg border px-4 py-3 text-center " +
+                      (b.achieved
+                        ? "border-accent bg-accent-soft"
+                        : "border-border opacity-50")
+                    }
+                  >
+                    <span className="text-2xl">{b.achieved ? "🏆" : "🔒"}</span>
+                    <span
+                      className={
+                        "text-xs font-medium " +
+                        (b.achieved ? "text-foreground" : "text-muted")
+                      }
+                    >
+                      {b.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
