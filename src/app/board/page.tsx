@@ -15,7 +15,7 @@ import { axisApi } from "@/lib/axis/api";
 import type { WantCategory } from "@/lib/axis/types";
 import type { Schedule } from "@/lib/schedules/types";
 import { AppNav } from "@/components/app/AppNav";
-import { WideShell, ErrorBanner } from "@/components/axis/ui";
+import { WideShell, ErrorBanner, SecondaryButton } from "@/components/axis/ui";
 
 function formatDatetime(iso: string) {
   const d = new Date(iso);
@@ -104,6 +104,46 @@ export default function BoardPage() {
   const [dragOverStatus, setDragOverStatus] = useState<SelectionStatus | null>(
     null,
   );
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTargetStatus, setBulkTargetStatus] =
+    useState<SelectionStatus>("応募");
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function applyBulkStatus() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkUpdating(true);
+    const prev = selections;
+    setSelections((cur) =>
+      cur.map((s) =>
+        selectedIds.has(s.id) ? { ...s, status: bulkTargetStatus } : s,
+      ),
+    );
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          selectionsApi.update(id, { status: bulkTargetStatus }),
+        ),
+      );
+      setSelectedIds(new Set());
+      setSelectMode(false);
+    } catch {
+      setSelections(prev);
+      setError("一括ステータス更新に失敗しました。");
+    } finally {
+      setBulkUpdating(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -208,7 +248,47 @@ export default function BoardPage() {
   return (
     <WideShell className="max-w-[1650px]">
       <AppNav />
-      <h1 className="text-xl font-bold text-foreground">進捗ボード</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground">進捗ボード</h1>
+        <SecondaryButton
+          type="button"
+          onClick={() => {
+            setSelectMode((v) => !v);
+            setSelectedIds(new Set());
+          }}
+        >
+          {selectMode ? "選択モードを終了" : "複数選択"}
+        </SecondaryButton>
+      </div>
+
+      {selectMode && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-panel px-4 py-3">
+          <span className="text-sm text-foreground">
+            {selectedIds.size}件選択中
+          </span>
+          <select
+            value={bulkTargetStatus}
+            onChange={(e) =>
+              setBulkTargetStatus(e.target.value as SelectionStatus)
+            }
+            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-accent"
+          >
+            {SELECTION_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={selectedIds.size === 0 || bulkUpdating}
+            onClick={applyBulkStatus}
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+          >
+            {bulkUpdating ? "更新中…" : "選択した項目に適用"}
+          </button>
+        </div>
+      )}
 
       {error && <ErrorBanner message={error} />}
 
@@ -365,22 +445,9 @@ export default function BoardPage() {
                     wantCategories,
                     s.wantFitScores,
                   );
-                  return (
-                    <Link
-                      key={s.id}
-                      href={`/selections/${s.id}`}
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", s.id);
-                        e.dataTransfer.effectAllowed = "move";
-                        setDraggingId(s.id);
-                      }}
-                      onDragEnd={() => setDraggingId(null)}
-                      className={
-                        "flex cursor-grab flex-col gap-1 rounded-lg border border-border bg-panel px-3 py-2.5 transition-colors hover:border-accent active:cursor-grabbing " +
-                        (draggingId === s.id ? "opacity-40" : "")
-                      }
-                    >
+                  const selected = selectedIds.has(s.id);
+                  const cardContent = (
+                    <>
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-sm font-medium text-foreground">
                           {s.companyName}
@@ -401,6 +468,44 @@ export default function BoardPage() {
                           {formatDatetime(next.eventDatetime)} {next.title}
                         </span>
                       )}
+                    </>
+                  );
+
+                  if (selectMode) {
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => toggleSelected(s.id)}
+                        className={
+                          "flex flex-col gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors " +
+                          (selected
+                            ? "border-accent bg-accent-soft"
+                            : "border-border bg-panel hover:border-accent")
+                        }
+                      >
+                        {cardContent}
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={s.id}
+                      href={`/selections/${s.id}`}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", s.id);
+                        e.dataTransfer.effectAllowed = "move";
+                        setDraggingId(s.id);
+                      }}
+                      onDragEnd={() => setDraggingId(null)}
+                      className={
+                        "flex cursor-grab flex-col gap-1 rounded-lg border border-border bg-panel px-3 py-2.5 transition-colors hover:border-accent active:cursor-grabbing " +
+                        (draggingId === s.id ? "opacity-40" : "")
+                      }
+                    >
+                      {cardContent}
                     </Link>
                   );
                 })}

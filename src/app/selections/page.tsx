@@ -35,6 +35,37 @@ export default function SelectionsListPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!window.confirm(`選択した${ids.length}件を削除しますか？`)) return;
+
+    setBulkDeleting(true);
+    setError(null);
+    try {
+      await Promise.all(ids.map((id) => selectionsApi.remove(id)));
+      setSelections((cur) => cur.filter((s) => !selectedIds.has(s.id)));
+      setSelectedIds(new Set());
+      setSelectMode(false);
+    } catch {
+      setError("一括削除に失敗しました。");
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -79,6 +110,15 @@ export default function SelectionsListPage() {
         <div className="flex items-center gap-2">
           <SecondaryButton
             type="button"
+            onClick={() => {
+              setSelectMode((v) => !v);
+              setSelectedIds(new Set());
+            }}
+          >
+            {selectMode ? "選択モードを終了" : "複数選択"}
+          </SecondaryButton>
+          <SecondaryButton
+            type="button"
             disabled={importing}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -106,6 +146,22 @@ export default function SelectionsListPage() {
       </p>
 
       {error && <ErrorBanner message={error} />}
+
+      {selectMode && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-panel px-4 py-3">
+          <span className="text-sm text-foreground">
+            {selectedIds.size}件選択中
+          </span>
+          <button
+            type="button"
+            disabled={selectedIds.size === 0 || bulkDeleting}
+            onClick={handleBulkDelete}
+            className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+          >
+            {bulkDeleting ? "削除中…" : "選択した項目を削除"}
+          </button>
+        </div>
+      )}
 
       {importResult && (
         <div className="rounded-lg border border-border bg-panel px-3 py-2 text-sm text-foreground">
@@ -146,32 +202,72 @@ export default function SelectionsListPage() {
       <div className="flex flex-col gap-2">
         {selections.map((s) => {
           const fitScore = computeWantFitScore(wantCategories, s.wantFitScores);
+          const leftContent = (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-foreground">
+                {s.companyName}
+              </span>
+              {s.position && (
+                <span className="text-xs text-muted">{s.position}</span>
+              )}
+            </div>
+          );
+          const rightContent = (
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-medium ${statusBadgeClasses(s.status)}`}
+              >
+                {s.status}
+              </span>
+              {fitScore !== null && (
+                <span className="text-[11px] text-muted">
+                  適合度 {fitScore}点
+                </span>
+              )}
+            </div>
+          );
+
+          if (selectMode) {
+            const selected = selectedIds.has(s.id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => toggleSelected(s.id)}
+                className={
+                  "flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-colors " +
+                  (selected
+                    ? "border-accent bg-accent-soft"
+                    : "border-border bg-panel hover:border-accent")
+                }
+              >
+                <span className="flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className={
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded border " +
+                      (selected
+                        ? "border-accent bg-accent text-white"
+                        : "border-border")
+                    }
+                  >
+                    {selected && "✓"}
+                  </span>
+                  {leftContent}
+                </span>
+                {rightContent}
+              </button>
+            );
+          }
+
           return (
             <Link
               key={s.id}
               href={`/selections/${s.id}`}
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-panel px-4 py-3 transition-colors hover:border-accent"
             >
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-foreground">
-                  {s.companyName}
-                </span>
-                {s.position && (
-                  <span className="text-xs text-muted">{s.position}</span>
-                )}
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${statusBadgeClasses(s.status)}`}
-                >
-                  {s.status}
-                </span>
-                {fitScore !== null && (
-                  <span className="text-[11px] text-muted">
-                    適合度 {fitScore}点
-                  </span>
-                )}
-              </div>
+              {leftContent}
+              {rightContent}
             </Link>
           );
         })}
