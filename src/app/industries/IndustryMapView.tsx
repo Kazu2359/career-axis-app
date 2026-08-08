@@ -203,8 +203,51 @@ export function IndustryMapView({
     setSelectedMinor(null);
   }
 
+  const breadcrumb: { label: string; onClick?: () => void }[] = [
+    {
+      label: "業界一覧",
+      onClick: drilledMajor ? handleBackToMajor : undefined,
+    },
+  ];
+  if (drilledBubble) {
+    breadcrumb.push({
+      label: drilledBubble.industry,
+      onClick: drilledType ? handleBackToType : undefined,
+    });
+  }
+  if (drilledTypeBubble) {
+    breadcrumb.push({
+      label: drilledTypeBubble.type,
+      onClick: selectedMinor ? () => setSelectedMinor(null) : undefined,
+    });
+  }
+  if (selectedMinorBubble) {
+    breadcrumb.push({ label: selectedMinorBubble.minor });
+  }
+
   return (
     <>
+      {breadcrumb.length > 1 && (
+        <nav className="flex flex-wrap items-center gap-1 text-sm">
+          {breadcrumb.map((b, i) => (
+            <span key={i} className="flex items-center gap-1">
+              {i > 0 && <span className="text-border">/</span>}
+              {b.onClick ? (
+                <button
+                  type="button"
+                  onClick={b.onClick}
+                  className="text-muted hover:text-foreground hover:underline"
+                >
+                  {b.label}
+                </button>
+              ) : (
+                <span className="font-medium text-foreground">{b.label}</span>
+              )}
+            </span>
+          ))}
+        </nav>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted">
           業界（17分類、企業名から自動推定・詳細画面で変更可）ごとに応募件数をバブルの大きさで表しています。業種・中分類（自由記述の詳細業種）は各バブル内・一覧表の内訳に表示されます。「未設定」は業界が入力されていない応募先です。
