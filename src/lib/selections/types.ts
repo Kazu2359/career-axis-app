@@ -45,7 +45,7 @@ export interface Selection {
   updatedAt: string;
 }
 
-interface WeightedCategory {
+export interface WeightedCategory {
   id: string;
   weight: number;
 }

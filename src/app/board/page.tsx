@@ -16,6 +16,12 @@ import type { WantCategory } from "@/lib/axis/types";
 import type { Schedule } from "@/lib/schedules/types";
 import { AppNav } from "@/components/app/AppNav";
 import { WideShell, ErrorBanner, SecondaryButton } from "@/components/axis/ui";
+import {
+  DEFAULT_SELECTION_SORT,
+  SELECTION_SORT_OPTIONS,
+  sortSelections,
+  type SelectionSortKey,
+} from "@/lib/selections/sort";
 
 function formatDatetime(iso: string) {
   const d = new Date(iso);
@@ -108,6 +114,7 @@ export default function BoardPage() {
   const [dragOverStatus, setDragOverStatus] = useState<SelectionStatus | null>(
     null,
   );
+  const [sortKey, setSortKey] = useState<SelectionSortKey>(DEFAULT_SELECTION_SORT);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkTargetStatus, setBulkTargetStatus] =
@@ -237,17 +244,30 @@ export default function BoardPage() {
   return (
     <WideShell className="max-w-[1650px]">
       <AppNav />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-foreground">進捗ボード</h1>
-        <SecondaryButton
-          type="button"
-          onClick={() => {
-            setSelectMode((v) => !v);
-            setSelectedIds(new Set());
-          }}
-        >
-          {selectMode ? "選択モードを終了" : "複数選択"}
-        </SecondaryButton>
+        <div className="flex items-center gap-2">
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SelectionSortKey)}
+            className="w-fit rounded-lg border border-border bg-panel px-3 py-1.5 text-sm outline-none focus:border-accent"
+          >
+            {SELECTION_SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <SecondaryButton
+            type="button"
+            onClick={() => {
+              setSelectMode((v) => !v);
+              setSelectedIds(new Set());
+            }}
+          >
+            {selectMode ? "選択モードを終了" : "複数選択"}
+          </SecondaryButton>
+        </div>
       </div>
 
       {selectMode && (
@@ -422,7 +442,11 @@ export default function BoardPage() {
 
       <div className="flex gap-2 overflow-x-auto pb-2">
         {SELECTION_STATUSES.map((status) => {
-          const items = selections.filter((s) => s.status === status);
+          const items = sortSelections(
+            selections.filter((s) => s.status === status),
+            sortKey,
+            wantCategories,
+          );
           return (
             <div
               key={status}

@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { selectionsApi } from "@/lib/selections/api";
 import { buildSelectionsCsv, decodeCsvBuffer } from "@/lib/selections/csv";
 import {
+  DEFAULT_SELECTION_SORT,
+  SELECTION_SORT_OPTIONS,
+  sortSelections,
+  type SelectionSortKey,
+} from "@/lib/selections/sort";
+import {
   SELECTION_STATUSES,
   computeWantFitScore,
   statusBadgeClasses,
@@ -30,6 +36,7 @@ export default function SelectionsListPage() {
   const [selections, setSelections] = useState<Selection[]>([]);
   const [wantCategories, setWantCategories] = useState<WantCategory[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SelectionSortKey>(DEFAULT_SELECTION_SORT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -199,18 +206,31 @@ export default function SelectionsListPage() {
         </div>
       )}
 
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-fit rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
-      >
-        <option value="">すべてのステータス</option>
-        {SELECTION_STATUSES.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-fit rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">すべてのステータス</option>
+          {SELECTION_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as SelectionSortKey)}
+          className="w-fit rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          {SELECTION_SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {!loading && selections.length === 0 && (
         <p className="text-sm text-muted">
@@ -219,7 +239,7 @@ export default function SelectionsListPage() {
       )}
 
       <div className="flex flex-col gap-2">
-        {selections.map((s) => {
+        {sortSelections(selections, sortKey, wantCategories).map((s) => {
           const fitScore = computeWantFitScore(wantCategories, s.wantFitScores);
           const leftContent = (
             <div className="flex flex-col">
