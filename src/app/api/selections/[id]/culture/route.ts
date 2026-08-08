@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api/auth";
 import { apiError, dbError } from "@/lib/api/errors";
 import type { Selection } from "@/lib/selections/types";
+import { CULTURE_QUESTIONS } from "@/lib/axis/cultureQuestions";
 
 interface SelectionRow {
   id: string;
@@ -43,33 +44,35 @@ function rowToSelection(row: SelectionRow): Selection {
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+const VALID_IDS = new Set(CULTURE_QUESTIONS.map((q) => String(q.id)));
+
 /**
- * Want条件ごとの満たし度（1〜5）を保存する。
- * 求人の構造化データが無く自動判定できないため、Must条件の照合と同様に手動評価方式にしている。
+ * 企業カルチャー診断(キャリアアンカーとの相性確認用)の回答を保存する。
+ * ユーザー側のキャリアアンカー診断と対になる、企業・仕事の傾向を答える二択8問。
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
   const { supabase, user } = await requireUser();
   if (!user) return apiError("UNAUTHORIZED", "ログインが必要です");
 
-  let body: { scores?: Record<string, number> };
+  let body: { answers?: Record<string, string> };
   try {
     body = await request.json();
   } catch {
     return apiError("VALIDATION_ERROR", "リクエストボディがJSONではありません");
   }
 
-  const scores = body.scores ?? {};
-  for (const rating of Object.values(scores)) {
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return apiError("VALIDATION_ERROR", "評価は1〜5の整数で指定してください");
+  const answers = body.answers ?? {};
+  for (const [key, value] of Object.entries(answers)) {
+    if (!VALID_IDS.has(key) || (value !== "A" && value !== "B")) {
+      return apiError("VALIDATION_ERROR", "回答の内容が不正です");
     }
   }
 
   const { data, error } = await supabase
     .from("selections")
     .update({
-      want_fit_scores: scores,
+      culture_answers: answers,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

@@ -14,6 +14,12 @@ import type { MustCondition, WantCategory } from "@/lib/axis/types";
 import type { Schedule } from "@/lib/schedules/types";
 import { INDUSTRIES, INDUSTRY_TYPES } from "@/lib/selections/industry";
 import { POSITION_CATEGORIES } from "@/lib/selections/position";
+import {
+  CULTURE_QUESTIONS,
+  matchCultureWithAnchors,
+  type CultureAnswers,
+} from "@/lib/axis/cultureQuestions";
+import type { AnchorScore } from "@/lib/axis/types";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -33,6 +39,8 @@ export default function SelectionDetailPage() {
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [wantCategories, setWantCategories] = useState<WantCategory[]>([]);
   const [wantScores, setWantScores] = useState<Record<string, number>>({});
+  const [anchorScores, setAnchorScores] = useState<AnchorScore[]>([]);
+  const [cultureAnswers, setCultureAnswers] = useState<CultureAnswers>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,14 +53,17 @@ export default function SelectionDetailPage() {
       axisApi.getMustConditions(),
       axisApi.getWantCategories(),
       schedulesApi.list({ selectionId: id }),
+      axisApi.getAnchorScores(),
     ])
-      .then(([sel, conditions, wants, sched]) => {
+      .then(([sel, conditions, wants, sched, anchors]) => {
         setSelection(sel);
         setMustConditions(conditions);
         setChecks(sel.mustConditionCheck ?? {});
         setWantCategories(wants);
         setWantScores(sel.wantFitScores ?? {});
         setSchedules(sched);
+        setCultureAnswers(sel.cultureAnswers ?? {});
+        setAnchorScores(anchors.scores);
       })
       .catch(() => setError("読み込みに失敗しました。"))
       .finally(() => setLoading(false));
@@ -123,6 +134,19 @@ export default function SelectionDetailPage() {
       setSelection(updated);
     } catch {
       setError("適合度評価の保存に失敗しました。");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveCultureAnswers() {
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await selectionsApi.saveCultureAnswers(id, cultureAnswers);
+      setSelection(updated);
+    } catch {
+      setError("カルチャー診断の保存に失敗しました。");
     } finally {
       setSaving(false);
     }
@@ -445,6 +469,87 @@ export default function SelectionDetailPage() {
             </SecondaryButton>
           </>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-border pt-5">
+        <h2 className="text-sm font-semibold text-foreground">
+          企業カルチャー診断（キャリアアンカーとの相性）
+        </h2>
+        <p className="text-xs text-muted">
+          仕事内容・組織文化について当てはまる方を選んでください。あなたの
+          <a href="/axis/self/anchors" className="underline">
+            キャリアアンカー診断
+          </a>
+          結果と照らして、相性を確認できます。
+        </p>
+        <div className="flex flex-col gap-1.5">
+          {CULTURE_QUESTIONS.map((q) => (
+            <div
+              key={q.id}
+              className="flex flex-col gap-1.5 rounded-lg border border-border bg-panel px-3 py-2.5"
+            >
+              <span className="text-xs text-muted">{q.prompt}</span>
+              <div className="flex gap-2">
+                {(["A", "B"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() =>
+                      setCultureAnswers((prev) => ({ ...prev, [String(q.id)]: opt }))
+                    }
+                    className={
+                      "flex-1 rounded-lg border px-3 py-2 text-left text-sm transition-colors " +
+                      (cultureAnswers[String(q.id)] === opt
+                        ? "border-accent bg-accent-soft text-foreground"
+                        : "border-border text-muted hover:border-accent")
+                    }
+                  >
+                    {opt === "A" ? q.optionA : q.optionB}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <SecondaryButton onClick={handleSaveCultureAnswers} disabled={saving}>
+          診断結果を保存
+        </SecondaryButton>
+
+        {(() => {
+          if (anchorScores.length === 0) return null;
+          const result = matchCultureWithAnchors(anchorScores, cultureAnswers);
+          if (result.answeredCount === 0) return null;
+          if (result.items.length === 0) {
+            return (
+              <p className="text-sm text-muted">
+                あなたが重視するアンカーと重なる質問がまだ回答されていません。
+              </p>
+            );
+          }
+          return (
+            <div className="flex flex-col gap-1.5 rounded-lg border border-accent bg-accent-soft px-3 py-2.5">
+              <p className="text-sm font-medium text-foreground">
+                相性：一致 {result.matchCount}件 ／ ズレ {result.mismatchCount}件
+                （あなたが重視するアンカーのうち）
+              </p>
+              <ul className="flex flex-col gap-1 text-xs">
+                {result.items.map((item) => (
+                  <li
+                    key={item.anchor}
+                    className={
+                      item.match === "match" ? "text-foreground" : "text-warn"
+                    }
+                  >
+                    {item.match === "match" ? "◎" : "△"} {item.anchorLabel}：
+                    {item.match === "match"
+                      ? "あなたの志向と合っています"
+                      : "あなたの志向とズレている可能性があります"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
       </div>
 
       <button

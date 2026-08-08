@@ -42,6 +42,7 @@ export interface Selection {
   status: SelectionStatus;
   mustConditionCheck: Record<string, boolean> | null;
   wantFitScores: Record<string, number> | null;
+  cultureAnswers: Record<string, "A" | "B"> | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -68,6 +68,11 @@ export const selectionsApi = {
       method: "POST",
       body: JSON.stringify({ scores }),
     }),
+  saveCultureAnswers: (id: string, answers: Record<string, "A" | "B">) =>
+    request<Selection>(`/api/selections/${id}/culture`, {
+      method: "POST",
+      body: JSON.stringify({ answers }),
+    }),
   import: (csv: string) =>
     request<{
       created: number;

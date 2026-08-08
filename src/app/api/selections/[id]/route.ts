@@ -16,6 +16,7 @@ interface SelectionRow {
   status: string;
   must_condition_check: Record<string, boolean> | null;
   want_fit_scores: Record<string, number> | null;
+  culture_answers: Record<string, "A" | "B"> | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +35,7 @@ function rowToSelection(row: SelectionRow): Selection {
     status: row.status as Selection["status"],
     mustConditionCheck: row.must_condition_check,
     wantFitScores: row.want_fit_scores,
+    cultureAnswers: row.culture_answers,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -49,7 +51,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { data, error } = await supabase
     .from("selections")
     .select(
-      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, culture_answers, created_at, updated_at",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -106,7 +108,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, culture_answers, created_at, updated_at",
     )
     .maybeSingle<SelectionRow>();
 
