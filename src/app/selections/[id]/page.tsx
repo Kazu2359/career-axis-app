@@ -184,6 +184,7 @@ export default function SelectionDetailPage() {
       <Field label="次の予定日時（任意）">
         <input
           type="datetime-local"
+          step={300}
           value={scheduleDatetime}
           onChange={(e) => setScheduleDatetime(e.target.value)}
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"

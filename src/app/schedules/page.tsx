@@ -262,6 +262,7 @@ export default function SchedulesPage() {
           />
           <input
             type="datetime-local"
+            step={300}
             value={eventDatetime}
             onChange={(e) => setEventDatetime(e.target.value)}
             className="rounded-md border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
