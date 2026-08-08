@@ -22,6 +22,7 @@ import {
   sortSelections,
   type SelectionSortKey,
 } from "@/lib/selections/sort";
+import { Celebration } from "./Celebration";
 
 function formatDatetime(iso: string) {
   const d = new Date(iso);
@@ -41,6 +42,23 @@ const FUNNEL_STATUSES: SelectionStatus[] = [
   "最終面接",
   "内定",
 ];
+
+const CELEBRATION_LABELS: Partial<Record<SelectionStatus, string>> = {
+  一次面接: "書類選考突破",
+  二次面接: "一次面接突破",
+  最終面接: "二次面接突破",
+  内定: "内定",
+};
+
+function celebrationForTransition(
+  from: SelectionStatus,
+  to: SelectionStatus,
+): string | null {
+  const fromIdx = FUNNEL_STATUSES.indexOf(from);
+  const toIdx = FUNNEL_STATUSES.indexOf(to);
+  if (fromIdx === -1 || toIdx === -1 || toIdx <= fromIdx) return null;
+  return CELEBRATION_LABELS[to] ?? null;
+}
 
 function startOfWeek(d: Date): Date {
   const day = d.getDay();
@@ -157,6 +175,7 @@ export default function BoardPage() {
   const [bulkTargetStatus, setBulkTargetStatus] =
     useState<SelectionStatus>("応募");
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [celebration, setCelebration] = useState<string | null>(null);
 
   function toggleSelected(id: string) {
     setSelectedIds((cur) => {
@@ -172,6 +191,11 @@ export default function BoardPage() {
     if (ids.length === 0) return;
     setBulkUpdating(true);
     const prev = selections;
+    const hasForwardMove = selections.some(
+      (s) =>
+        selectedIds.has(s.id) &&
+        celebrationForTransition(s.status, bulkTargetStatus),
+    );
     setSelections((cur) =>
       cur.map((s) =>
         selectedIds.has(s.id) ? { ...s, status: bulkTargetStatus } : s,
@@ -185,6 +209,10 @@ export default function BoardPage() {
       );
       setSelectedIds(new Set());
       setSelectMode(false);
+      if (hasForwardMove) {
+        const label = CELEBRATION_LABELS[bulkTargetStatus];
+        if (label) setCelebration(label);
+      }
     } catch {
       setSelections(prev);
       setError("一括ステータス更新に失敗しました。");
@@ -226,12 +254,15 @@ export default function BoardPage() {
     const target = selections.find((s) => s.id === id);
     if (!target || target.status === status) return;
 
+    const prevStatus = target.status;
     const prev = selections;
     setSelections((cur) =>
       cur.map((s) => (s.id === id ? { ...s, status } : s)),
     );
     try {
       await selectionsApi.update(id, { status });
+      const label = celebrationForTransition(prevStatus, status);
+      if (label) setCelebration(label);
     } catch {
       setSelections(prev);
       setError("ステータスの更新に失敗しました。");
@@ -280,6 +311,9 @@ export default function BoardPage() {
 
   return (
     <WideShell className="max-w-[1650px]">
+      {celebration && (
+        <Celebration title={celebration} onDone={() => setCelebration(null)} />
+      )}
       <AppNav />
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-foreground">進捗ボード</h1>
