@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { axisApi } from "@/lib/axis/api";
 import { MOTIVATION_TYPES, type MotivationType } from "@/lib/axis/types";
 import { StepProgress } from "@/components/axis/StepProgress";
@@ -14,7 +14,16 @@ import {
 } from "@/components/axis/ui";
 
 export default function MotivationTypePage() {
+  return (
+    <Suspense fallback={null}>
+      <MotivationTypePageInner />
+    </Suspense>
+  );
+}
+
+function MotivationTypePageInner() {
   const router = useRouter();
+  const backToCard = useSearchParams().get("edit") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +48,7 @@ export default function MotivationTypePage() {
     setError(null);
     try {
       await axisApi.saveProfile({ motivationType, motivationNote });
-      router.push("/axis/must");
+      router.push(backToCard ? "/axis/card" : "/axis/must");
     } catch {
       setError("保存に失敗しました。しばらくしてからもう一度お試しください。");
     } finally {
@@ -90,7 +99,11 @@ export default function MotivationTypePage() {
         onClick={handleNext}
         disabled={loading || saving || !motivationType}
       >
-        {saving ? "保存中..." : "次へ（Must条件）"}
+        {saving
+          ? "保存中..."
+          : backToCard
+            ? "保存してカードに戻る"
+            : "次へ（Must条件）"}
       </PrimaryButton>
     </AxisShell>
   );

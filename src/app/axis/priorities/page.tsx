@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { axisApi } from "@/lib/axis/api";
 import type { WantCategory } from "@/lib/axis/types";
 import { WANT_WEIGHT_TOTAL } from "@/lib/axis/wantCategories";
@@ -9,7 +9,16 @@ import { StepProgress } from "@/components/axis/StepProgress";
 import { AxisShell, ErrorBanner, PrimaryButton } from "@/components/axis/ui";
 
 export default function WantWeightsPage() {
+  return (
+    <Suspense fallback={null}>
+      <WantWeightsPageInner />
+    </Suspense>
+  );
+}
+
+function WantWeightsPageInner() {
   const router = useRouter();
+  const backToCard = useSearchParams().get("edit") === "1";
   const [categories, setCategories] = useState<WantCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,7 +65,7 @@ export default function WantWeightsPage() {
       await axisApi.saveWantWeights(
         categories.map((c) => ({ id: c.id, weight: c.weight })),
       );
-      router.push("/axis/priorities/transition");
+      router.push(backToCard ? "/axis/card" : "/axis/priorities/transition");
     } catch {
       setError("保存に失敗しました。合計が100になっているか確認してください。");
     } finally {
@@ -125,7 +134,11 @@ export default function WantWeightsPage() {
         onClick={handleNext}
         disabled={loading || saving || !isValidTotal}
       >
-        {saving ? "保存中..." : "次へ（キャリア移行戦略）"}
+        {saving
+          ? "保存中..."
+          : backToCard
+            ? "保存してカードに戻る"
+            : "次へ（キャリア移行戦略）"}
       </PrimaryButton>
     </AxisShell>
   );

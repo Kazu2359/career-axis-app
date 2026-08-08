@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { axisApi } from "@/lib/axis/api";
 import { StepProgress } from "@/components/axis/StepProgress";
 import {
@@ -13,7 +13,16 @@ import {
 } from "@/components/axis/ui";
 
 export default function WillCanMustPage() {
+  return (
+    <Suspense fallback={null}>
+      <WillCanMustPageInner />
+    </Suspense>
+  );
+}
+
+function WillCanMustPageInner() {
   const router = useRouter();
+  const backToCard = useSearchParams().get("edit") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +61,7 @@ export default function WillCanMustPage() {
         mustMarketText,
         approachStyleText,
       });
-      router.push("/axis/self/anchors");
+      router.push(backToCard ? "/axis/card" : "/axis/self/anchors");
     } catch {
       setError("保存に失敗しました。しばらくしてからもう一度お試しください。");
     } finally {
@@ -114,7 +123,11 @@ export default function WillCanMustPage() {
       </Field>
 
       <PrimaryButton onClick={handleNext} disabled={loading || saving}>
-        {saving ? "保存中..." : "次へ（キャリアアンカー診断）"}
+        {saving
+          ? "保存中..."
+          : backToCard
+            ? "保存してカードに戻る"
+            : "次へ（キャリアアンカー診断）"}
       </PrimaryButton>
     </AxisShell>
   );

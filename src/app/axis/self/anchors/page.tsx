@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ANCHOR_QUESTIONS } from "@/lib/axis/anchorQuestions";
 import { axisApi } from "@/lib/axis/api";
 import { StepProgress } from "@/components/axis/StepProgress";
@@ -10,7 +10,16 @@ import { AxisShell, ErrorBanner, GhostButton, PrimaryButton } from "@/components
 type Choice = "A" | "B";
 
 export default function AnchorDiagnosisPage() {
+  return (
+    <Suspense fallback={null}>
+      <AnchorDiagnosisPageInner />
+    </Suspense>
+  );
+}
+
+function AnchorDiagnosisPageInner() {
   const router = useRouter();
+  const backToCard = useSearchParams().get("edit") === "1";
   const [answers, setAnswers] = useState<Record<number, Choice>>({});
   const [index, setIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -32,7 +41,7 @@ export default function AnchorDiagnosisPage() {
       if (result.needsRediagnosis) {
         setRediagnosisPrompt(true);
       } else {
-        router.push("/axis/self/motivation");
+        router.push(backToCard ? "/axis/card" : "/axis/self/motivation");
       }
     } catch {
       setError("送信に失敗しました。しばらくしてからもう一度お試しください。");

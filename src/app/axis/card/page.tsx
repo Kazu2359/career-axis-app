@@ -12,15 +12,27 @@ import { AxisShell, ErrorBanner, PrimaryButton, SecondaryButton } from "@/compon
 
 function MiniPanel({
   label,
+  editHref,
   children,
 }: {
   label: string;
+  editHref?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-border bg-panel p-3">
-      <div className="mb-2 text-xs font-semibold tracking-wide text-accent">
-        {label}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold tracking-wide text-accent">
+          {label}
+        </span>
+        {editHref && (
+          <Link
+            href={editHref}
+            className="text-xs text-muted hover:text-foreground hover:underline"
+          >
+            編集
+          </Link>
+        )}
       </div>
       {children}
     </div>
@@ -70,7 +82,7 @@ export default function AxisCardPage() {
       <h1 className="text-xl font-bold text-foreground">あなたの軸カード</h1>
 
       <div className="grid grid-cols-2 gap-3">
-        <MiniPanel label="MUST条件">
+        <MiniPanel label="MUST条件" editHref="/axis/must?edit=1">
           {card.mustConditions.length === 0 ? (
             <p className="text-sm text-muted">未登録</p>
           ) : (
@@ -83,7 +95,7 @@ export default function AxisCardPage() {
             </ul>
           )}
         </MiniPanel>
-        <MiniPanel label="動機タイプ">
+        <MiniPanel label="動機タイプ" editHref="/axis/self/motivation?edit=1">
           {motivation ? (
             <>
               <div className="text-base font-bold text-foreground">
@@ -97,7 +109,7 @@ export default function AxisCardPage() {
         </MiniPanel>
       </div>
 
-      <MiniPanel label="WANT重み配分">
+      <MiniPanel label="WANT重み配分" editHref="/axis/priorities?edit=1">
         {card.wantCategories.length === 0 ? (
           <p className="text-sm text-muted">未設定</p>
         ) : (
@@ -127,7 +139,7 @@ export default function AxisCardPage() {
       </MiniPanel>
 
       <div className="grid grid-cols-2 gap-3">
-        <MiniPanel label="キャリアアンカー 上位">
+        <MiniPanel label="キャリアアンカー 上位" editHref="/axis/self/anchors?edit=1">
           {topAnchors.length === 0 ? (
             <p className="text-sm text-muted">未診断</p>
           ) : (
@@ -140,7 +152,7 @@ export default function AxisCardPage() {
             </ol>
           )}
         </MiniPanel>
-        <MiniPanel label="キャリア移行戦略">
+        <MiniPanel label="キャリア移行戦略" editHref="/axis/priorities/transition?edit=1">
           <div className="flex flex-col gap-1 text-xs text-foreground">
             <span>
               <b className="text-muted">入口：</b>
@@ -160,7 +172,10 @@ export default function AxisCardPage() {
         </MiniPanel>
       </div>
 
-      <MiniPanel label="短期MUST / 中長期NORTH STAR">
+      <MiniPanel
+        label="短期MUST / 中長期NORTH STAR"
+        editHref="/axis/priorities/transition?edit=1"
+      >
         <div className="flex flex-col gap-1.5 text-sm text-foreground">
           <span>
             <b className="text-accent">今回：</b>
@@ -176,9 +191,15 @@ export default function AxisCardPage() {
         </div>
       </MiniPanel>
 
+      <p className="text-xs text-muted">
+        各項目右上の「編集」から、その項目だけをすぐに編集できます。
+      </p>
+
       <div className="flex gap-2">
-        <Link href="/axis/self" className="flex-1">
-          <SecondaryButton className="w-full">編集する</SecondaryButton>
+        <Link href="/axis/self?edit=1" className="flex-1">
+          <SecondaryButton className="w-full">
+            土台（Will/Can/Must）を編集
+          </SecondaryButton>
         </Link>
         <Link href="/selections" className="flex-1">
           <PrimaryButton className="w-full">

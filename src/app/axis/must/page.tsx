@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { axisApi } from "@/lib/axis/api";
 import type { MustCondition } from "@/lib/axis/types";
 import { StepProgress } from "@/components/axis/StepProgress";
 import { AxisShell, ErrorBanner, PrimaryButton, SecondaryButton } from "@/components/axis/ui";
 
 export default function MustConditionsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MustConditionsPageInner />
+    </Suspense>
+  );
+}
+
+function MustConditionsPageInner() {
   const router = useRouter();
+  const backToCard = useSearchParams().get("edit") === "1";
   const [conditions, setConditions] = useState<MustCondition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +140,10 @@ export default function MustConditionsPage() {
         </button>
       )}
 
-      <PrimaryButton onClick={() => router.push("/axis/priorities")}>
-        次へ（Want重み配分）
+      <PrimaryButton
+        onClick={() => router.push(backToCard ? "/axis/card" : "/axis/priorities")}
+      >
+        {backToCard ? "カードに戻る" : "次へ（Want重み配分）"}
       </PrimaryButton>
     </AxisShell>
   );
