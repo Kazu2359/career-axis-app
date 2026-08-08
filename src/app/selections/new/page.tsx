@@ -98,22 +98,22 @@ export default function NewSelectionPage() {
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </Field>
-      <Field label="職種カテゴリ（任意・職種名から自動推定、変更可）">
-        <select
+      <Field label="職種カテゴリ（任意・職種名から自動推定、候補外を直接入力も可）">
+        <input
+          list="position-category-options"
           value={positionCategory}
           onChange={(e) => {
             setPositionCategory(e.target.value);
             setPositionCategoryTouched(true);
           }}
+          placeholder="候補から選ぶか、自由に入力"
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
-        >
-          <option value="">未設定</option>
+        />
+        <datalist id="position-category-options">
           {POSITION_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
+            <option key={c} value={c} />
           ))}
-        </select>
+        </datalist>
       </Field>
       <Field label="業界（任意・企業名から自動推定、変更可）">
         <select
