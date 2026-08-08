@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   const lengthError = findLengthViolation([
     ["companyName", body.companyName, 200],
     ["position", body.position, 200],
-    ["positionCategory", body.positionCategory ?? undefined, 50],
+    ["positionCategory", body.positionCategory ?? undefined, 200],
     ["industryMajor", body.industryMajor ?? undefined, 50],
     ["industryTypeMajor", body.industryTypeMajor ?? undefined, 50],
     ["industryMinor", body.industryMinor ?? undefined, 50],

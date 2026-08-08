@@ -9,7 +9,7 @@ import {
   guessIndustry,
   guessIndustryType,
 } from "@/lib/selections/industry";
-import { POSITION_CATEGORIES, guessPositionCategory } from "@/lib/selections/position";
+import { POSITION_CATEGORIES } from "@/lib/selections/position";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -23,9 +23,7 @@ import {
 export default function NewSelectionPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
-  const [position, setPosition] = useState("");
   const [positionCategory, setPositionCategory] = useState("");
-  const [positionCategoryTouched, setPositionCategoryTouched] = useState(false);
   const [industryMajor, setIndustryMajor] = useState("");
   const [industryMajorTouched, setIndustryMajorTouched] = useState(false);
   const [industryTypeMajor, setIndustryTypeMajor] = useState("");
@@ -47,12 +45,6 @@ export default function NewSelectionPage() {
     }
   }
 
-  function handlePositionBlur() {
-    if (positionCategoryTouched || positionCategory) return;
-    const guessed = guessPositionCategory(position, companyName);
-    if (guessed) setPositionCategory(guessed);
-  }
-
   async function handleCreate() {
     if (!companyName.trim()) return;
     setSaving(true);
@@ -60,7 +52,7 @@ export default function NewSelectionPage() {
     try {
       const created = await selectionsApi.create({
         companyName,
-        position,
+        position: positionCategory,
         positionCategory: positionCategory || null,
         industryMajor: industryMajor || null,
         industryTypeMajor: industryTypeMajor || null,
@@ -90,22 +82,11 @@ export default function NewSelectionPage() {
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </Field>
-      <Field label="職種（任意）">
-        <input
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          onBlur={handlePositionBlur}
-          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
-        />
-      </Field>
-      <Field label="職種カテゴリ（任意・職種名から自動推定、候補外を直接入力も可）">
+      <Field label="職種（任意・候補から選ぶか自由入力）">
         <input
           list="position-category-options"
           value={positionCategory}
-          onChange={(e) => {
-            setPositionCategory(e.target.value);
-            setPositionCategoryTouched(true);
-          }}
+          onChange={(e) => setPositionCategory(e.target.value)}
           placeholder="候補から選ぶか、自由に入力"
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />

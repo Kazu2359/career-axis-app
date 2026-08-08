@@ -163,22 +163,14 @@ export default function SelectionDetailPage() {
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </Field>
-      <Field label="職種">
-        <input
-          value={selection.position}
-          onChange={(e) =>
-            setSelection({ ...selection, position: e.target.value })
-          }
-          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
-        />
-      </Field>
-      <Field label="職種カテゴリ（候補外を直接入力も可）">
+      <Field label="職種（候補から選ぶか自由入力）">
         <input
           list="position-category-options"
-          value={selection.positionCategory ?? ""}
+          value={selection.positionCategory ?? selection.position}
           onChange={(e) =>
             setSelection({
               ...selection,
+              position: e.target.value,
               positionCategory: e.target.value || null,
             })
           }
