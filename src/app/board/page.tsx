@@ -164,15 +164,18 @@ export default function BoardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  function nextSchedule(selectionId: string): Schedule | null {
-    const upcoming = schedules
-      .filter(
-        (s) =>
-          s.selectionId === selectionId &&
-          new Date(s.eventDatetime).getTime() >= now,
-      )
+  function nextSchedule(
+    selectionId: string,
+  ): { schedule: Schedule; isPast: boolean } | null {
+    const related = schedules
+      .filter((s) => s.selectionId === selectionId)
       .sort((a, b) => a.eventDatetime.localeCompare(b.eventDatetime));
-    return upcoming[0] ?? null;
+    const upcoming = related.find(
+      (s) => new Date(s.eventDatetime).getTime() >= now,
+    );
+    if (upcoming) return { schedule: upcoming, isPast: false };
+    const last = related[related.length - 1];
+    return last ? { schedule: last, isPast: true } : null;
   }
 
   async function handleDrop(status: SelectionStatus, id: string) {
@@ -478,8 +481,15 @@ export default function BoardPage() {
                         </span>
                       )}
                       {next && (
-                        <span className="font-mono text-xs text-accent">
-                          {formatDatetime(next.eventDatetime)} {next.title}
+                        <span
+                          className={
+                            "font-mono text-xs " +
+                            (next.isPast ? "text-muted" : "text-accent")
+                          }
+                        >
+                          {formatDatetime(next.schedule.eventDatetime)}{" "}
+                          {next.schedule.title}
+                          {next.isPast && "（終了）"}
                         </span>
                       )}
                     </>
