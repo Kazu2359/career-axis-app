@@ -1,4 +1,4 @@
-import { SELECTION_STATUSES, type SelectionStatus } from "./types";
+import { SELECTION_STATUSES, type Selection, type SelectionStatus } from "./types";
 
 export interface WantCategoryRef {
   id: string;
@@ -195,6 +195,37 @@ export function parseSelectionsCsv(
     hasStatusColumn: statusIdx !== -1,
     matchedWantCategoryIds: Array.from(wantColumnByIdx.values()),
   };
+}
+
+function csvEscape(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+export function buildSelectionsCsv(
+  selections: Selection[],
+  wantCategories: WantCategoryRef[] = [],
+): string {
+  const header = [
+    "企業名",
+    "職種",
+    "業界",
+    "ステータス",
+    ...wantCategories.map((c) => c.categoryName),
+  ];
+  const lines = [header.map(csvEscape).join(",")];
+
+  for (const s of selections) {
+    const row = [
+      s.companyName,
+      s.position,
+      s.industry ?? "",
+      s.status,
+      ...wantCategories.map((c) => String(s.wantFitScores?.[c.id] ?? "")),
+    ];
+    lines.push(row.map(csvEscape).join(","));
+  }
+
+  return lines.join("\r\n");
 }
 
 export function decodeCsvBuffer(buffer: ArrayBuffer): string {

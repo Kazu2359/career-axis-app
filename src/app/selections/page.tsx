@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { selectionsApi } from "@/lib/selections/api";
-import { decodeCsvBuffer } from "@/lib/selections/csv";
+import { buildSelectionsCsv, decodeCsvBuffer } from "@/lib/selections/csv";
 import {
   SELECTION_STATUSES,
   computeWantFitScore,
@@ -80,6 +80,18 @@ export default function SelectionsListPage() {
       .finally(() => setLoading(false));
   }, [statusFilter]);
 
+  function handleExport() {
+    const csv = buildSelectionsCsv(selections, wantCategories);
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `選考プロセス_${today}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -123,6 +135,13 @@ export default function SelectionsListPage() {
             onClick={() => fileInputRef.current?.click()}
           >
             {importing ? "インポート中…" : "CSVインポート"}
+          </SecondaryButton>
+          <SecondaryButton
+            type="button"
+            disabled={selections.length === 0}
+            onClick={handleExport}
+          >
+            CSVエクスポート
           </SecondaryButton>
           <input
             ref={fileInputRef}
