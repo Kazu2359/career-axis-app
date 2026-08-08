@@ -8,9 +8,17 @@ export function AxisShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function WideShell({ children }: { children: React.ReactNode }) {
+export function WideShell({
+  children,
+  className = "max-w-6xl",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-10">
+    <main
+      className={`mx-auto flex w-full flex-1 flex-col gap-6 px-5 py-10 ${className}`}
+    >
       {children}
     </main>
   );
