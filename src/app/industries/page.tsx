@@ -62,22 +62,24 @@ export default function IndustriesPage() {
         </p>
       )}
 
-      {!loading && selections.length > 0 && tab === "industry" && (
-        <IndustryMapView
-          selections={selections}
-          setSelections={setSelections}
-          setError={setError}
-        />
-      )}
-      {!loading && selections.length > 0 && tab === "position" && (
-        <PositionMapView
-          selections={selections}
-          setSelections={setSelections}
-          setError={setError}
-        />
-      )}
-      {!loading && selections.length > 0 && tab === "heatmap" && (
-        <HeatmapView selections={selections} />
+      {!loading && selections.length > 0 && (
+        <div key={tab} className="animate-fade-in-up flex flex-col gap-6">
+          {tab === "industry" && (
+            <IndustryMapView
+              selections={selections}
+              setSelections={setSelections}
+              setError={setError}
+            />
+          )}
+          {tab === "position" && (
+            <PositionMapView
+              selections={selections}
+              setSelections={setSelections}
+              setError={setError}
+            />
+          )}
+          {tab === "heatmap" && <HeatmapView selections={selections} />}
+        </div>
       )}
     </WideShell>
   );

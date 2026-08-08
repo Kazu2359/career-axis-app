@@ -7,6 +7,7 @@ import type { Selection } from "@/lib/selections/types";
 import { statusBadgeClasses } from "@/lib/selections/types";
 import { guessPositionCategory } from "@/lib/selections/position";
 import { SecondaryButton } from "@/components/axis/ui";
+import { BubbleTooltip } from "./BubbleTooltip";
 
 const POSITION_COLORS: Record<string, string> = {
   "営業・セールス":
@@ -136,31 +137,47 @@ export function PositionMapView({
           const size = sizeFor(b.count);
           const isSelected = b.category === selectedCategory;
           return (
-            <button
+            <BubbleTooltip
               key={b.category}
-              type="button"
-              onClick={() =>
-                setSelectedCategory((cur) => (cur === b.category ? null : b.category))
-              }
-              title={`${b.category}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}\nクリックで企業一覧を表示`}
-              style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
-              className={
-                "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                colorFor(b.category) +
-                (isSelected ? " ring-4 ring-accent ring-offset-2 ring-offset-panel" : "")
+              content={
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-3 font-semibold">
+                    <span>{b.category}</span>
+                    <span>{b.count}件</span>
+                  </div>
+                  {b.offerCount > 0 && (
+                    <span className="text-accent">内定 {b.offerCount}件</span>
+                  )}
+                  <span className="text-muted">クリックで企業一覧を表示</span>
+                </div>
               }
             >
-              <span className="px-2 text-xs font-semibold leading-tight">
-                {b.category}
-              </span>
-              <span className="text-lg font-bold">{b.count}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedCategory((cur) => (cur === b.category ? null : b.category))
+                }
+                style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
+                className={
+                  "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                  colorFor(b.category) +
+                  (isSelected
+                    ? " ring-4 ring-accent ring-offset-2 ring-offset-panel"
+                    : "")
+                }
+              >
+                <span className="px-2 text-xs font-semibold leading-tight">
+                  {b.category}
+                </span>
+                <span className="text-lg font-bold">{b.count}</span>
+              </button>
+            </BubbleTooltip>
           );
         })}
       </div>
 
       {selectedBubble && (
-        <div className="rounded-lg border border-accent bg-panel px-4 py-3">
+        <div className="animate-fade-in-up rounded-lg border border-accent bg-panel px-4 py-3">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground">
               {selectedBubble.category}（{selectedBubble.count}件）
