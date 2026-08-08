@@ -21,14 +21,21 @@ export const selectionsApi = {
       `/api/selections${status ? `?status=${encodeURIComponent(status)}` : ""}`,
     ),
   get: (id: string) => request<Selection>(`/api/selections/${id}`),
-  create: (input: { companyName: string; position: string; industry?: string | null }) =>
+  create: (input: {
+    companyName: string;
+    position: string;
+    industry?: string | null;
+    companyUrl?: string | null;
+  }) =>
     request<Selection>("/api/selections", {
       method: "POST",
       body: JSON.stringify(input),
     }),
   update: (
     id: string,
-    input: Partial<Pick<Selection, "companyName" | "position" | "industry" | "status">>,
+    input: Partial<
+      Pick<Selection, "companyName" | "position" | "industry" | "companyUrl" | "status">
+    >,
   ) =>
     request<Selection>(`/api/selections/${id}`, {
       method: "PATCH",

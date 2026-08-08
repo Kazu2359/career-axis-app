@@ -65,6 +65,7 @@ export default function SelectionDetailPage() {
         companyName: selection.companyName,
         position: selection.position,
         industry: selection.industry,
+        companyUrl: selection.companyUrl,
         status: selection.status,
       });
       setSelection(updated);
@@ -183,6 +184,30 @@ export default function SelectionDetailPage() {
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="企業URL">
+        <input
+          type="url"
+          value={selection.companyUrl ?? ""}
+          onChange={(e) =>
+            setSelection({
+              ...selection,
+              companyUrl: e.target.value || null,
+            })
+          }
+          placeholder="https://..."
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        />
+        {selection.companyUrl && (
+          <a
+            href={selection.companyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-accent hover:underline"
+          >
+            開く ↗
+          </a>
+        )}
       </Field>
       <Field label="ステータス">
         <select

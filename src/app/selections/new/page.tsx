@@ -19,6 +19,7 @@ export default function NewSelectionPage() {
   const [position, setPosition] = useState("");
   const [industry, setIndustry] = useState("");
   const [industryTouched, setIndustryTouched] = useState(false);
+  const [companyUrl, setCompanyUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ export default function NewSelectionPage() {
         companyName,
         position,
         industry: industry || null,
+        companyUrl: companyUrl || null,
       });
       router.push(`/selections/${created.id}`);
     } catch {
@@ -83,6 +85,15 @@ export default function NewSelectionPage() {
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="企業URL（任意・求人ページや企業サイトなど）">
+        <input
+          type="url"
+          value={companyUrl}
+          onChange={(e) => setCompanyUrl(e.target.value)}
+          placeholder="https://..."
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        />
       </Field>
 
       <div className="flex gap-2">

@@ -9,6 +9,8 @@ export interface ParsedSelectionRow {
   line: number;
   companyName: string;
   position: string;
+  industry: string;
+  companyUrl: string;
   status: SelectionStatus;
   wantScores: Record<string, number>;
 }
@@ -23,12 +25,16 @@ export interface ParseSelectionsCsvResult {
   errors: SelectionRowError[];
   hasPositionColumn: boolean;
   hasStatusColumn: boolean;
+  hasIndustryColumn: boolean;
+  hasCompanyUrlColumn: boolean;
   matchedWantCategoryIds: string[];
 }
 
 const COMPANY_HEADERS = ["企業名", "会社名", "company", "companyname", "company_name"];
 const POSITION_HEADERS = ["職種", "position"];
 const STATUS_HEADERS = ["ステータス", "status"];
+const INDUSTRY_HEADERS = ["業界", "industry"];
+const COMPANY_URL_HEADERS = ["企業url", "企業サイト", "求人url", "url", "company_url", "companyurl"];
 
 function normalizeHeader(h: string): string {
   return h.trim().toLowerCase();
@@ -111,6 +117,8 @@ export function parseSelectionsCsv(
       errors: [{ line: 0, message: "CSVが空です" }],
       hasPositionColumn: false,
       hasStatusColumn: false,
+      hasIndustryColumn: false,
+      hasCompanyUrlColumn: false,
       matchedWantCategoryIds: [],
     };
   }
@@ -120,10 +128,19 @@ export function parseSelectionsCsv(
   const companyIdx = header.findIndex((h) => COMPANY_HEADERS.includes(h));
   const positionIdx = header.findIndex((h) => POSITION_HEADERS.includes(h));
   const statusIdx = header.findIndex((h) => STATUS_HEADERS.includes(h));
+  const industryIdx = header.findIndex((h) => INDUSTRY_HEADERS.includes(h));
+  const companyUrlIdx = header.findIndex((h) => COMPANY_URL_HEADERS.includes(h));
 
   const wantColumnByIdx = new Map<number, string>();
   rawHeader.forEach((h, idx) => {
-    if (idx === companyIdx || idx === positionIdx || idx === statusIdx) return;
+    if (
+      idx === companyIdx ||
+      idx === positionIdx ||
+      idx === statusIdx ||
+      idx === industryIdx ||
+      idx === companyUrlIdx
+    )
+      return;
     const match = wantCategories.find((c) => c.categoryName.trim() === h);
     if (match) wantColumnByIdx.set(idx, match.id);
   });
@@ -136,6 +153,8 @@ export function parseSelectionsCsv(
       ],
       hasPositionColumn: positionIdx !== -1,
       hasStatusColumn: statusIdx !== -1,
+      hasIndustryColumn: industryIdx !== -1,
+      hasCompanyUrlColumn: companyUrlIdx !== -1,
       matchedWantCategoryIds: Array.from(wantColumnByIdx.values()),
     };
   }
@@ -155,6 +174,8 @@ export function parseSelectionsCsv(
     }
 
     const position = positionIdx === -1 ? "" : (cols[positionIdx] ?? "").trim();
+    const industry = industryIdx === -1 ? "" : (cols[industryIdx] ?? "").trim();
+    const companyUrl = companyUrlIdx === -1 ? "" : (cols[companyUrlIdx] ?? "").trim();
     const rawStatus = statusIdx === -1 ? "" : (cols[statusIdx] ?? "").trim();
 
     let status: SelectionStatus;
@@ -185,7 +206,7 @@ export function parseSelectionsCsv(
       wantScores[categoryId] = n;
     }
 
-    rows.push({ line, companyName, position, status, wantScores });
+    rows.push({ line, companyName, position, industry, companyUrl, status, wantScores });
   }
 
   return {
@@ -193,6 +214,8 @@ export function parseSelectionsCsv(
     errors,
     hasPositionColumn: positionIdx !== -1,
     hasStatusColumn: statusIdx !== -1,
+    hasIndustryColumn: industryIdx !== -1,
+    hasCompanyUrlColumn: companyUrlIdx !== -1,
     matchedWantCategoryIds: Array.from(wantColumnByIdx.values()),
   };
 }
@@ -210,6 +233,7 @@ export function buildSelectionsCsv(
     "職種",
     "業界",
     "ステータス",
+    "企業URL",
     ...wantCategories.map((c) => c.categoryName),
   ];
   const lines = [header.map(csvEscape).join(",")];
@@ -220,6 +244,7 @@ export function buildSelectionsCsv(
       s.position,
       s.industry ?? "",
       s.status,
+      s.companyUrl ?? "",
       ...wantCategories.map((c) => String(s.wantFitScores?.[c.id] ?? "")),
     ];
     lines.push(row.map(csvEscape).join(","));
