@@ -39,7 +39,13 @@ export interface ParseSelectionsCsvResult {
 const COMPANY_HEADERS = ["企業名", "会社名", "company", "companyname", "company_name"];
 const POSITION_HEADERS = ["職種", "position"];
 const STATUS_HEADERS = ["ステータス", "status"];
-const INDUSTRY_MAJOR_HEADERS = ["業界大分類", "業界（大分類）", "industry_major", "industrymajor"];
+const INDUSTRY_MAJOR_HEADERS = [
+  "業界",
+  "業界大分類",
+  "業界（大分類）",
+  "industry_major",
+  "industrymajor",
+];
 const INDUSTRY_TYPE_MAJOR_HEADERS = [
   "業種大分類",
   "業種（大分類）",
@@ -47,10 +53,7 @@ const INDUSTRY_TYPE_MAJOR_HEADERS = [
   "industry_type_major",
   "industrytypemajor",
 ];
-// 「業界」は過去のCSV運用で中分類相当の詳細な値(例:製造業DX)が入っていたため、
-// 後方互換として引き続き中分類(industry_minor)に割り当てる。
 const INDUSTRY_MINOR_HEADERS = [
-  "業界",
   "業種中分類",
   "業種（中分類）",
   "中分類",
