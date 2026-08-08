@@ -11,6 +11,7 @@ import {
 } from "@/lib/selections/types";
 import { axisApi } from "@/lib/axis/api";
 import type { MustCondition, WantCategory } from "@/lib/axis/types";
+import type { Schedule } from "@/lib/schedules/types";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -33,19 +34,22 @@ export default function SelectionDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scheduleDatetime, setScheduleDatetime] = useState("");
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   useEffect(() => {
     Promise.all([
       selectionsApi.get(id),
       axisApi.getMustConditions(),
       axisApi.getWantCategories(),
+      schedulesApi.list({ selectionId: id }),
     ])
-      .then(([sel, conditions, wants]) => {
+      .then(([sel, conditions, wants, sched]) => {
         setSelection(sel);
         setMustConditions(conditions);
         setChecks(sel.mustConditionCheck ?? {});
         setWantCategories(wants);
         setWantScores(sel.wantFitScores ?? {});
+        setSchedules(sched);
       })
       .catch(() => setError("読み込みに失敗しました。"))
       .finally(() => setLoading(false));
@@ -63,19 +67,29 @@ export default function SelectionDetailPage() {
       });
       setSelection(updated);
       if (scheduleDatetime) {
-        await schedulesApi.create({
+        const created = await schedulesApi.create({
           title: updated.status,
           eventDatetime: new Date(scheduleDatetime).toISOString(),
           eventType: "面接",
           selectionId: updated.id,
           note: null,
         });
+        setSchedules((cur) => [...cur, created]);
         setScheduleDatetime("");
       }
     } catch {
       setError("保存に失敗しました。");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeleteSchedule(scheduleId: string) {
+    try {
+      await schedulesApi.remove(scheduleId);
+      setSchedules((cur) => cur.filter((s) => s.id !== scheduleId));
+    } catch {
+      setError("予定の削除に失敗しました。");
     }
   }
 
@@ -178,6 +192,39 @@ export default function SelectionDetailPage() {
           入力して保存すると、件名「{selection.status}」の予定としてスケジュールに追加されます。
         </span>
       </Field>
+
+      {schedules.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-muted">登録済みの予定</span>
+          {[...schedules]
+            .sort((a, b) => a.eventDatetime.localeCompare(b.eventDatetime))
+            .map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-panel px-3 py-2 text-sm"
+              >
+                <span className="text-foreground">
+                  {new Date(s.eventDatetime).toLocaleString("ja-JP", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  <span className="ml-2 text-muted">{s.title}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteSchedule(s.id)}
+                  className="shrink-0 text-xs text-warn hover:underline"
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+        </div>
+      )}
+
       <PrimaryButton onClick={handleSaveDetails} disabled={saving}>
         保存する
       </PrimaryButton>

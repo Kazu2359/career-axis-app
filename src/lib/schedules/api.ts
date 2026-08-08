@@ -16,7 +16,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const schedulesApi = {
-  list: () => request<Schedule[]>("/api/schedules"),
+  list: (params?: { selectionId?: string }) =>
+    request<Schedule[]>(
+      `/api/schedules${params?.selectionId ? `?selectionId=${encodeURIComponent(params.selectionId)}` : ""}`,
+    ),
   create: (input: Omit<Schedule, "id">) =>
     request<Schedule>("/api/schedules", {
       method: "POST",
