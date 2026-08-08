@@ -219,9 +219,8 @@ export default function BoardPage() {
     count: selections.filter((s) => s.status === status).length,
   }));
   const funnelMax = Math.max(1, ...funnelCounts.map((f) => f.count));
-  const closedCount = selections.filter(
-    (s) => s.status === "不採用" || s.status === "辞退",
-  ).length;
+  const rejectedCount = selections.filter((s) => s.status === "不採用").length;
+  const declinedCount = selections.filter((s) => s.status === "辞退").length;
 
   const streakDays = Array.from(
     { length: STREAK_DAYS },
@@ -343,10 +342,11 @@ export default function BoardPage() {
                 </div>
               ))}
             </div>
-            {closedCount > 0 && (
-              <p className="mt-2 text-xs text-muted">
-                不採用・辞退: {closedCount}件
-              </p>
+            {(rejectedCount > 0 || declinedCount > 0) && (
+              <div className="mt-2 flex gap-4 text-xs text-muted">
+                {rejectedCount > 0 && <span>不採用: {rejectedCount}件</span>}
+                {declinedCount > 0 && <span>辞退: {declinedCount}件</span>}
+              </div>
             )}
           </div>
 
