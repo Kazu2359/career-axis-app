@@ -53,7 +53,8 @@ export default function IndustriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guessing, setGuessing] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
+  const [drilledMajor, setDrilledMajor] = useState<string | null>(null);
+  const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
 
   useEffect(() => {
     selectionsApi
@@ -130,27 +131,42 @@ export default function IndustriesPage() {
     })
     .sort((a, b) => b.count - a.count);
 
-  const maxCount = Math.max(1, ...bubbles.map((b) => b.count));
-
-  function sizeFor(count: number) {
+  function sizeFor(count: number, maxCount: number) {
     const ratio = Math.sqrt(count / maxCount);
     return Math.round(MIN_SIZE + (MAX_SIZE - MIN_SIZE) * ratio);
   }
 
-  const selectedBubble = bubbles.find((b) => b.industry === selectedIndustry);
+  const majorMaxCount = Math.max(1, ...bubbles.map((b) => b.count));
 
-  const selectedGroups = selectedBubble
+  const drilledBubble = bubbles.find((b) => b.industry === drilledMajor);
+
+  const minorBubbles = drilledBubble
     ? (() => {
         const byMinor = new Map<string, Selection[]>();
-        for (const item of selectedBubble.items) {
+        for (const item of drilledBubble.items) {
           const key = item.industryMinor?.trim() || "詳細未設定";
           const list = byMinor.get(key);
           if (list) list.push(item);
           else byMinor.set(key, [item]);
         }
-        return Array.from(byMinor.entries()).sort((a, b) => b[1].length - a[1].length);
+        return Array.from(byMinor.entries())
+          .map(([minor, items]) => ({ minor, items, count: items.length }))
+          .sort((a, b) => b.count - a.count);
       })()
     : [];
+  const minorMaxCount = Math.max(1, ...minorBubbles.map((b) => b.count));
+
+  const selectedMinorBubble = minorBubbles.find((b) => b.minor === selectedMinor);
+
+  function handleDrill(industry: string) {
+    setDrilledMajor(industry);
+    setSelectedMinor(null);
+  }
+
+  function handleBack() {
+    setDrilledMajor(null);
+    setSelectedMinor(null);
+  }
 
   return (
     <WideShell>
@@ -183,104 +199,143 @@ export default function IndustriesPage() {
 
       {!loading && selections.length > 0 && (
         <>
-          <div className="flex flex-wrap items-center justify-center gap-4 rounded-lg border border-border bg-panel px-4 py-10">
-            {bubbles.map((b) => {
-              const size = sizeFor(b.count);
-              const isSelected = b.industry === selectedIndustry;
-              return (
-                <button
-                  key={b.industry}
-                  type="button"
-                  onClick={() =>
-                    setSelectedIndustry((cur) => (cur === b.industry ? null : b.industry))
-                  }
-                  title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}`}
-                  className={
-                    "flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                    colorFor(b.industry) +
-                    (isSelected ? " ring-4 ring-accent ring-offset-2 ring-offset-panel" : "")
-                  }
-                  style={{ width: size, height: size }}
-                >
-                  <span className="px-2 text-xs font-semibold leading-tight">
-                    {b.industry}
-                  </span>
-                  <span className="text-lg font-bold">{b.count}</span>
-                </button>
-              );
-            })}
+          <div className="min-h-[260px] rounded-lg border border-border bg-panel px-4 py-10">
+            {!drilledBubble ? (
+              <div
+                key="major"
+                className="flex flex-wrap items-center justify-center gap-4"
+              >
+                {bubbles.map((b, i) => {
+                  const size = sizeFor(b.count, majorMaxCount);
+                  return (
+                    <button
+                      key={b.industry}
+                      type="button"
+                      onClick={() => handleDrill(b.industry)}
+                      title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}\nクリックで業種の内訳を表示`}
+                      style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
+                      className={
+                        "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                        colorFor(b.industry)
+                      }
+                    >
+                      <span className="px-2 text-xs font-semibold leading-tight">
+                        {b.industry}
+                      </span>
+                      <span className="text-lg font-bold">{b.count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div key={drilledBubble.industry} className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="animate-bubble-pop flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full border-2 border-dashed border-muted text-center text-muted shadow-sm transition-transform hover:scale-105 hover:text-foreground"
+                  >
+                    <span className="text-lg">←</span>
+                    <span className="text-[10px]">戻る</span>
+                  </button>
+                  {minorBubbles.map((b, i) => {
+                    const size = sizeFor(b.count, minorMaxCount);
+                    const isSelected = b.minor === selectedMinor;
+                    return (
+                      <button
+                        key={b.minor}
+                        type="button"
+                        onClick={() =>
+                          setSelectedMinor((cur) => (cur === b.minor ? null : b.minor))
+                        }
+                        title={`${b.minor}：${b.count}件\nクリックで企業一覧を表示`}
+                        style={{
+                          width: size,
+                          height: size,
+                          animationDelay: `${(i + 1) * 30}ms`,
+                        }}
+                        className={
+                          "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                          colorFor(drilledBubble.industry) +
+                          (isSelected
+                            ? " ring-4 ring-accent ring-offset-2 ring-offset-panel"
+                            : "")
+                        }
+                      >
+                        <span className="px-2 text-xs font-semibold leading-tight">
+                          {b.minor}
+                        </span>
+                        <span className="text-lg font-bold">{b.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-center text-xs text-muted">
+                  {drilledBubble.industry}（{drilledBubble.count}件）の業種内訳
+                </p>
+              </div>
+            )}
           </div>
 
-          {selectedBubble && (
+          {selectedMinorBubble && (
             <div className="rounded-lg border border-accent bg-panel px-4 py-3">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {selectedBubble.industry}（{selectedBubble.count}件）
+                  {selectedMinorBubble.minor}（{selectedMinorBubble.count}件）
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setSelectedIndustry(null)}
+                  onClick={() => setSelectedMinor(null)}
                   className="text-xs text-muted hover:text-foreground hover:underline"
                 >
                   閉じる
                 </button>
               </div>
-              <div className="flex flex-col gap-4">
-                {selectedGroups.map(([minor, items]) => (
-                  <div key={minor} className="flex flex-col gap-1.5">
-                    <span className="text-xs font-medium text-muted">
-                      {minor}（{items.length}件）
+              <div className="flex flex-col gap-1.5">
+                {selectedMinorBubble.items.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/selections/${s.id}`}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-accent"
+                  >
+                    <span className="text-foreground">
+                      {s.companyName}
+                      {s.position && (
+                        <span className="ml-1.5 text-xs text-muted">{s.position}</span>
+                      )}
                     </span>
-                    <div className="flex flex-col gap-1.5">
-                      {items.map((s) => (
-                        <Link
-                          key={s.id}
-                          href={`/selections/${s.id}`}
-                          className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-accent"
-                        >
-                          <span className="text-foreground">
-                            {s.companyName}
-                            {s.position && (
-                              <span className="ml-1.5 text-xs text-muted">
-                                {s.position}
-                              </span>
-                            )}
-                          </span>
-                          <span
-                            className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClasses(s.status)}`}
-                          >
-                            {s.status}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClasses(s.status)}`}
+                    >
+                      {s.status}
+                    </span>
+                  </Link>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {bubbles.map((b) => (
-              <div
-                key={b.industry}
-                className="flex flex-col gap-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-foreground">{b.industry}</span>
-                  <span className="shrink-0 text-muted">
-                    {b.count}件
-                    {b.offerCount > 0 && `（内定${b.offerCount}）`}
-                  </span>
+          {!drilledBubble && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {bubbles.map((b) => (
+                <div
+                  key={b.industry}
+                  className="flex flex-col gap-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-foreground">{b.industry}</span>
+                    <span className="shrink-0 text-muted">
+                      {b.count}件
+                      {b.offerCount > 0 && `（内定${b.offerCount}）`}
+                    </span>
+                  </div>
+                  {b.minorBreakdown.length > 0 && (
+                    <p className="text-xs text-muted">{b.minorBreakdown.join("、")}</p>
+                  )}
                 </div>
-                {b.minorBreakdown.length > 0 && (
-                  <p className="text-xs text-muted">
-                    {b.minorBreakdown.join("、")}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </WideShell>
