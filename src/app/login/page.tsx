@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Turnstile, type TurnstileHandle } from "@/components/axis/Turnstile";
 import {
   AxisShell,
   ErrorBanner,
@@ -22,6 +23,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [signedUpNotice, setSignedUpNotice] = useState(false);
   const [resetSentNotice, setResetSentNotice] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,12 +33,17 @@ export default function LoginPage() {
     setSignedUpNotice(false);
     setResetSentNotice(false);
     const supabase = createClient();
+    const captchaOptions = captchaToken ? { captchaToken } : undefined;
 
     if (mode === "forgotPassword") {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email,
-        { redirectTo: `${window.location.origin}/reset-password` },
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+          captchaToken: captchaToken ?? undefined,
+        },
       );
+      turnstileRef.current?.reset();
       if (resetError) {
         setError(resetError.message);
         setLoading(false);
@@ -50,7 +58,9 @@ export default function LoginPage() {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: captchaOptions,
       });
+      turnstileRef.current?.reset();
       if (signInError) {
         setError(signInError.message);
         setLoading(false);
@@ -64,7 +74,9 @@ export default function LoginPage() {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: captchaOptions,
     });
+    turnstileRef.current?.reset();
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
@@ -114,13 +126,14 @@ export default function LoginPage() {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={mode === "signUp" ? 8 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </Field>
         )}
+        <Turnstile ref={turnstileRef} onToken={setCaptchaToken} />
         <PrimaryButton type="submit" disabled={loading}>
           {loading
             ? "処理中..."
