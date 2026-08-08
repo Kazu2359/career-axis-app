@@ -20,6 +20,7 @@ import {
   Field,
   PrimaryButton,
   SecondaryButton,
+  TextArea,
 } from "@/components/axis/ui";
 
 export default function SelectionDetailPage() {
@@ -66,6 +67,7 @@ export default function SelectionDetailPage() {
         position: selection.position,
         industry: selection.industry,
         companyUrl: selection.companyUrl,
+        note: selection.note,
         status: selection.status,
       });
       setSelection(updated);
@@ -226,6 +228,16 @@ export default function SelectionDetailPage() {
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="メモ（任意）">
+        <TextArea
+          value={selection.note ?? ""}
+          onChange={(e) =>
+            setSelection({ ...selection, note: e.target.value || null })
+          }
+          rows={4}
+          placeholder="仕事内容、面接の所感、選考の経緯など"
+        />
       </Field>
       <Field label="次の予定日時（任意）">
         <input

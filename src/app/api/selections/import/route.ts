@@ -34,8 +34,15 @@ export async function POST(request: NextRequest) {
 
   if (wantError) return dbError(wantError);
 
-  const { rows, errors, hasPositionColumn, hasStatusColumn, hasIndustryColumn, hasCompanyUrlColumn } =
-    parseSelectionsCsv(
+  const {
+    rows,
+    errors,
+    hasPositionColumn,
+    hasStatusColumn,
+    hasIndustryColumn,
+    hasCompanyUrlColumn,
+    hasNoteColumn,
+  } = parseSelectionsCsv(
       body.csv,
       (wantCategories ?? []).map((c) => ({
         id: c.id,
@@ -80,6 +87,7 @@ export async function POST(request: NextRequest) {
       if (hasStatusColumn) update.status = row.status;
       if (hasIndustryColumn) update.industry = row.industry || null;
       if (hasCompanyUrlColumn) update.company_url = row.companyUrl || null;
+      if (hasNoteColumn) update.note = row.note || null;
       if (Object.keys(row.wantScores).length > 0) {
         update.want_fit_scores = {
           ...(existingSelection.wantFitScores ?? {}),
@@ -108,6 +116,7 @@ export async function POST(request: NextRequest) {
           position: row.position,
           industry: row.industry || null,
           company_url: row.companyUrl || null,
+          note: row.note || null,
           status: row.status,
           want_fit_scores: row.wantScores,
         })

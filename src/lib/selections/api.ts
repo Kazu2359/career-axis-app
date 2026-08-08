@@ -26,6 +26,7 @@ export const selectionsApi = {
     position: string;
     industry?: string | null;
     companyUrl?: string | null;
+    note?: string | null;
   }) =>
     request<Selection>("/api/selections", {
       method: "POST",
@@ -34,7 +35,10 @@ export const selectionsApi = {
   update: (
     id: string,
     input: Partial<
-      Pick<Selection, "companyName" | "position" | "industry" | "companyUrl" | "status">
+      Pick<
+        Selection,
+        "companyName" | "position" | "industry" | "companyUrl" | "note" | "status"
+      >
     >,
   ) =>
     request<Selection>(`/api/selections/${id}`, {

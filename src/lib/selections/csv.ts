@@ -11,6 +11,7 @@ export interface ParsedSelectionRow {
   position: string;
   industry: string;
   companyUrl: string;
+  note: string;
   status: SelectionStatus;
   wantScores: Record<string, number>;
 }
@@ -27,6 +28,7 @@ export interface ParseSelectionsCsvResult {
   hasStatusColumn: boolean;
   hasIndustryColumn: boolean;
   hasCompanyUrlColumn: boolean;
+  hasNoteColumn: boolean;
   matchedWantCategoryIds: string[];
 }
 
@@ -35,6 +37,7 @@ const POSITION_HEADERS = ["職種", "position"];
 const STATUS_HEADERS = ["ステータス", "status"];
 const INDUSTRY_HEADERS = ["業界", "industry"];
 const COMPANY_URL_HEADERS = ["企業url", "企業サイト", "求人url", "url", "company_url", "companyurl"];
+const NOTE_HEADERS = ["メモ", "備考", "note"];
 
 function normalizeHeader(h: string): string {
   return h.trim().toLowerCase();
@@ -119,6 +122,7 @@ export function parseSelectionsCsv(
       hasStatusColumn: false,
       hasIndustryColumn: false,
       hasCompanyUrlColumn: false,
+      hasNoteColumn: false,
       matchedWantCategoryIds: [],
     };
   }
@@ -130,6 +134,7 @@ export function parseSelectionsCsv(
   const statusIdx = header.findIndex((h) => STATUS_HEADERS.includes(h));
   const industryIdx = header.findIndex((h) => INDUSTRY_HEADERS.includes(h));
   const companyUrlIdx = header.findIndex((h) => COMPANY_URL_HEADERS.includes(h));
+  const noteIdx = header.findIndex((h) => NOTE_HEADERS.includes(h));
 
   const wantColumnByIdx = new Map<number, string>();
   rawHeader.forEach((h, idx) => {
@@ -138,7 +143,8 @@ export function parseSelectionsCsv(
       idx === positionIdx ||
       idx === statusIdx ||
       idx === industryIdx ||
-      idx === companyUrlIdx
+      idx === companyUrlIdx ||
+      idx === noteIdx
     )
       return;
     const match = wantCategories.find((c) => c.categoryName.trim() === h);
@@ -155,6 +161,7 @@ export function parseSelectionsCsv(
       hasStatusColumn: statusIdx !== -1,
       hasIndustryColumn: industryIdx !== -1,
       hasCompanyUrlColumn: companyUrlIdx !== -1,
+      hasNoteColumn: noteIdx !== -1,
       matchedWantCategoryIds: Array.from(wantColumnByIdx.values()),
     };
   }
@@ -176,6 +183,7 @@ export function parseSelectionsCsv(
     const position = positionIdx === -1 ? "" : (cols[positionIdx] ?? "").trim();
     const industry = industryIdx === -1 ? "" : (cols[industryIdx] ?? "").trim();
     const companyUrl = companyUrlIdx === -1 ? "" : (cols[companyUrlIdx] ?? "").trim();
+    const note = noteIdx === -1 ? "" : (cols[noteIdx] ?? "").trim();
     const rawStatus = statusIdx === -1 ? "" : (cols[statusIdx] ?? "").trim();
 
     let status: SelectionStatus;
@@ -206,7 +214,16 @@ export function parseSelectionsCsv(
       wantScores[categoryId] = n;
     }
 
-    rows.push({ line, companyName, position, industry, companyUrl, status, wantScores });
+    rows.push({
+      line,
+      companyName,
+      position,
+      industry,
+      companyUrl,
+      note,
+      status,
+      wantScores,
+    });
   }
 
   return {
@@ -216,6 +233,7 @@ export function parseSelectionsCsv(
     hasStatusColumn: statusIdx !== -1,
     hasIndustryColumn: industryIdx !== -1,
     hasCompanyUrlColumn: companyUrlIdx !== -1,
+    hasNoteColumn: noteIdx !== -1,
     matchedWantCategoryIds: Array.from(wantColumnByIdx.values()),
   };
 }
@@ -234,6 +252,7 @@ export function buildSelectionsCsv(
     "業界",
     "ステータス",
     "企業URL",
+    "メモ",
     ...wantCategories.map((c) => c.categoryName),
   ];
   const lines = [header.map(csvEscape).join(",")];
@@ -245,6 +264,7 @@ export function buildSelectionsCsv(
       s.industry ?? "",
       s.status,
       s.companyUrl ?? "",
+      s.note ?? "",
       ...wantCategories.map((c) => String(s.wantFitScores?.[c.id] ?? "")),
     ];
     lines.push(row.map(csvEscape).join(","));

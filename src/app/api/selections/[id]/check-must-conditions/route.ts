@@ -9,6 +9,7 @@ interface SelectionRow {
   position: string;
   industry: string | null;
   company_url: string | null;
+  note: string | null;
   status: string;
   must_condition_check: Record<string, boolean> | null;
   want_fit_scores: Record<string, number> | null;
@@ -23,6 +24,7 @@ function rowToSelection(row: SelectionRow): Selection {
     position: row.position,
     industry: row.industry,
     companyUrl: row.company_url,
+    note: row.note,
     status: row.status as Selection["status"],
     mustConditionCheck: row.must_condition_check,
     wantFitScores: row.want_fit_scores,
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, company_name, position, industry, company_url, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .maybeSingle<SelectionRow>();
 
