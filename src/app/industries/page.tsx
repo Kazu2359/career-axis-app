@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { selectionsApi } from "@/lib/selections/api";
 import type { Selection } from "@/lib/selections/types";
+import { guessIndustry, guessIndustryType } from "@/lib/selections/industry";
 import { AppNav } from "@/components/app/AppNav";
-import { WideShell, ErrorBanner } from "@/components/axis/ui";
+import { WideShell, ErrorBanner, SecondaryButton } from "@/components/axis/ui";
 
 const INDUSTRY_COLORS: Record<string, string> = {
   "IT・ソフトウェア":
@@ -49,6 +50,7 @@ export default function IndustriesPage() {
   const [selections, setSelections] = useState<Selection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [guessing, setGuessing] = useState(false);
 
   useEffect(() => {
     selectionsApi
@@ -58,20 +60,70 @@ export default function IndustriesPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const missingMajor = selections.filter(
+    (s) => !s.industryMajor || !s.industryTypeMajor,
+  );
+
+  async function handleGuessMissingMajors() {
+    if (missingMajor.length === 0) return;
+    setGuessing(true);
+    setError(null);
+    try {
+      const results = await Promise.all(
+        missingMajor.map(async (s) => {
+          const guessedMajor = s.industryMajor
+            ? null
+            : guessIndustry(s.companyName, s.industryMinor);
+          const guessedTypeMajor = s.industryTypeMajor
+            ? null
+            : guessIndustryType(s.companyName, s.industryMinor);
+          if (!guessedMajor && !guessedTypeMajor) return null;
+          return selectionsApi.update(s.id, {
+            ...(guessedMajor && { industryMajor: guessedMajor }),
+            ...(guessedTypeMajor && { industryTypeMajor: guessedTypeMajor }),
+          });
+        }),
+      );
+      setSelections((cur) =>
+        cur.map((s) => {
+          const updated = results.find((r) => r?.id === s.id);
+          return updated ?? s;
+        }),
+      );
+    } catch {
+      setError("業界・業種の自動推定に失敗しました。");
+    } finally {
+      setGuessing(false);
+    }
+  }
+
   const groups = new Map<string, Selection[]>();
   for (const s of selections) {
-    const key = s.industry ?? "未設定";
+    const key = s.industryMajor ?? "未設定";
     const list = groups.get(key);
     if (list) list.push(s);
     else groups.set(key, [s]);
   }
 
   const bubbles = Array.from(groups.entries())
-    .map(([industry, items]) => ({
-      industry,
-      count: items.length,
-      offerCount: items.filter((s) => s.status === "内定").length,
-    }))
+    .map(([industry, items]) => {
+      const minorCounts = new Map<string, number>();
+      for (const item of items) {
+        const key = item.industryMinor?.trim() || null;
+        if (!key) continue;
+        minorCounts.set(key, (minorCounts.get(key) ?? 0) + 1);
+      }
+      const minorBreakdown = Array.from(minorCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => (count > 1 ? `${name}(${count})` : name));
+
+      return {
+        industry,
+        count: items.length,
+        offerCount: items.filter((s) => s.status === "内定").length,
+        minorBreakdown,
+      };
+    })
     .sort((a, b) => b.count - a.count);
 
   const maxCount = Math.max(1, ...bubbles.map((b) => b.count));
@@ -84,9 +136,22 @@ export default function IndustriesPage() {
   return (
     <WideShell>
       <AppNav />
-      <h1 className="text-xl font-bold text-foreground">業界マップ</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-foreground">業界マップ</h1>
+        {missingMajor.length > 0 && (
+          <SecondaryButton
+            type="button"
+            disabled={guessing}
+            onClick={handleGuessMissingMajors}
+          >
+            {guessing
+              ? "推定中…"
+              : `未設定の業界・業種大分類を自動推定（${missingMajor.length}件）`}
+          </SecondaryButton>
+        )}
+      </div>
       <p className="-mt-4 text-xs text-muted">
-        応募先の業界（企業名から自動推定、または各応募先の詳細画面で手動設定）ごとに、応募件数をバブルの大きさで表しています。「未設定」は業界が入力されていない応募先です。
+        業界（17分類、企業名から自動推定・詳細画面で変更可）ごとに応募件数をバブルの大きさで表しています。業種・中分類（自由記述の詳細業種）は各バブル内・一覧表の内訳に表示されます。「未設定」は業界が入力されていない応募先です。
       </p>
 
       {error && <ErrorBanner message={error} />}
@@ -105,7 +170,7 @@ export default function IndustriesPage() {
               return (
                 <div
                   key={b.industry}
-                  title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}`}
+                  title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}`}
                   className={
                     "flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
                     colorFor(b.industry)
@@ -121,17 +186,24 @@ export default function IndustriesPage() {
             })}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {bubbles.map((b) => (
               <div
                 key={b.industry}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border bg-panel px-3 py-2 text-sm"
+                className="flex flex-col gap-1 rounded-lg border border-border bg-panel px-3 py-2 text-sm"
               >
-                <span className="text-foreground">{b.industry}</span>
-                <span className="text-muted">
-                  {b.count}件
-                  {b.offerCount > 0 && `（内定${b.offerCount}）`}
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-foreground">{b.industry}</span>
+                  <span className="shrink-0 text-muted">
+                    {b.count}件
+                    {b.offerCount > 0 && `（内定${b.offerCount}）`}
+                  </span>
+                </div>
+                {b.minorBreakdown.length > 0 && (
+                  <p className="text-xs text-muted">
+                    {b.minorBreakdown.join("、")}
+                  </p>
+                )}
               </div>
             ))}
           </div>

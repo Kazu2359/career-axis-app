@@ -12,7 +12,7 @@ import {
 import { axisApi } from "@/lib/axis/api";
 import type { MustCondition, WantCategory } from "@/lib/axis/types";
 import type { Schedule } from "@/lib/schedules/types";
-import { INDUSTRIES } from "@/lib/selections/industry";
+import { INDUSTRIES, INDUSTRY_TYPES } from "@/lib/selections/industry";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -65,7 +65,9 @@ export default function SelectionDetailPage() {
       const updated = await selectionsApi.update(id, {
         companyName: selection.companyName,
         position: selection.position,
-        industry: selection.industry,
+        industryMajor: selection.industryMajor,
+        industryTypeMajor: selection.industryTypeMajor,
+        industryMinor: selection.industryMinor,
         companyUrl: selection.companyUrl,
         note: selection.note,
         status: selection.status,
@@ -170,11 +172,11 @@ export default function SelectionDetailPage() {
       </Field>
       <Field label="業界">
         <select
-          value={selection.industry ?? ""}
+          value={selection.industryMajor ?? ""}
           onChange={(e) =>
             setSelection({
               ...selection,
-              industry: e.target.value || null,
+              industryMajor: e.target.value || null,
             })
           }
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
@@ -186,6 +188,38 @@ export default function SelectionDetailPage() {
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="業種・大分類">
+        <select
+          value={selection.industryTypeMajor ?? ""}
+          onChange={(e) =>
+            setSelection({
+              ...selection,
+              industryTypeMajor: e.target.value || null,
+            })
+          }
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">未設定</option>
+          {INDUSTRY_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="業種・中分類（具体的な業種、自由記述）">
+        <input
+          value={selection.industryMinor ?? ""}
+          onChange={(e) =>
+            setSelection({
+              ...selection,
+              industryMinor: e.target.value || null,
+            })
+          }
+          placeholder="例：HRTech・SaaS"
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        />
       </Field>
       <Field label="企業URL">
         <input

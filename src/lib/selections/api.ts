@@ -24,7 +24,9 @@ export const selectionsApi = {
   create: (input: {
     companyName: string;
     position: string;
-    industry?: string | null;
+    industryMajor?: string | null;
+    industryTypeMajor?: string | null;
+    industryMinor?: string | null;
     companyUrl?: string | null;
     note?: string | null;
   }) =>
@@ -37,7 +39,14 @@ export const selectionsApi = {
     input: Partial<
       Pick<
         Selection,
-        "companyName" | "position" | "industry" | "companyUrl" | "note" | "status"
+        | "companyName"
+        | "position"
+        | "industryMajor"
+        | "industryTypeMajor"
+        | "industryMinor"
+        | "companyUrl"
+        | "note"
+        | "status"
       >
     >,
   ) =>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api/auth";
 import { apiError, dbError } from "@/lib/api/errors";
 import { parseSelectionsCsv, type SelectionRowError } from "@/lib/selections/csv";
+import { guessIndustry, guessIndustryType } from "@/lib/selections/industry";
 
 export async function POST(request: NextRequest) {
   const { supabase, user } = await requireUser();
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
     errors,
     hasPositionColumn,
     hasStatusColumn,
-    hasIndustryColumn,
+    hasIndustryMajorColumn,
+    hasIndustryTypeMajorColumn,
+    hasIndustryMinorColumn,
     hasCompanyUrlColumn,
     hasNoteColumn,
   } = parseSelectionsCsv(
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("selections")
-    .select("id, company_name, want_fit_scores")
+    .select("id, company_name, want_fit_scores, industry_major, industry_type_major")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -62,6 +65,8 @@ export async function POST(request: NextRequest) {
   interface ExistingSelection {
     id: string;
     wantFitScores: Record<string, number> | null;
+    industryMajor: string | null;
+    industryTypeMajor: string | null;
   }
 
   const byCompany = new Map<string, ExistingSelection>();
@@ -70,6 +75,8 @@ export async function POST(request: NextRequest) {
       byCompany.set(row.company_name, {
         id: row.id,
         wantFitScores: row.want_fit_scores,
+        industryMajor: row.industry_major,
+        industryTypeMajor: row.industry_type_major,
       });
     }
   }
@@ -79,13 +86,27 @@ export async function POST(request: NextRequest) {
 
   for (const row of rows) {
     const existingSelection = byCompany.get(row.companyName);
+    const guessedMajor = hasIndustryMajorColumn
+      ? null
+      : guessIndustry(row.companyName, row.industryMinor);
+    const guessedTypeMajor = hasIndustryTypeMajorColumn
+      ? null
+      : guessIndustryType(row.companyName, row.industryMinor);
+
     if (existingSelection) {
       const update: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
       if (hasPositionColumn) update.position = row.position;
       if (hasStatusColumn) update.status = row.status;
-      if (hasIndustryColumn) update.industry = row.industry || null;
+      if (hasIndustryMajorColumn) update.industry_major = row.industryMajor || null;
+      else if (guessedMajor && !existingSelection.industryMajor)
+        update.industry_major = guessedMajor;
+      if (hasIndustryTypeMajorColumn)
+        update.industry_type_major = row.industryTypeMajor || null;
+      else if (guessedTypeMajor && !existingSelection.industryTypeMajor)
+        update.industry_type_major = guessedTypeMajor;
+      if (hasIndustryMinorColumn) update.industry_minor = row.industryMinor || null;
       if (hasCompanyUrlColumn) update.company_url = row.companyUrl || null;
       if (hasNoteColumn) update.note = row.note || null;
       if (Object.keys(row.wantScores).length > 0) {
@@ -114,21 +135,32 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           company_name: row.companyName,
           position: row.position,
-          industry: row.industry || null,
+          industry_major: row.industryMajor || guessedMajor || null,
+          industry_type_major: row.industryTypeMajor || guessedTypeMajor || null,
+          industry_minor: row.industryMinor || null,
           company_url: row.companyUrl || null,
           note: row.note || null,
           status: row.status,
           want_fit_scores: row.wantScores,
         })
-        .select("id")
-        .single<{ id: string }>();
+        .select("id, industry_major, industry_type_major")
+        .single<{
+          id: string;
+          industry_major: string | null;
+          industry_type_major: string | null;
+        }>();
 
       if (error) {
         console.error("[db error]", error.message);
         rowErrors.push({ line: row.line, message: "登録に失敗しました" });
         continue;
       }
-      byCompany.set(row.companyName, { id: data.id, wantFitScores: row.wantScores });
+      byCompany.set(row.companyName, {
+        id: data.id,
+        wantFitScores: row.wantScores,
+        industryMajor: data.industry_major,
+        industryTypeMajor: data.industry_type_major,
+      });
       created++;
     }
   }

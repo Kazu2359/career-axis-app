@@ -7,7 +7,9 @@ interface SelectionRow {
   id: string;
   company_name: string;
   position: string;
-  industry: string | null;
+  industry_major: string | null;
+  industry_type_major: string | null;
+  industry_minor: string | null;
   company_url: string | null;
   note: string | null;
   status: string;
@@ -22,7 +24,9 @@ function rowToSelection(row: SelectionRow): Selection {
     id: row.id,
     companyName: row.company_name,
     position: row.position,
-    industry: row.industry,
+    industryMajor: row.industry_major,
+    industryTypeMajor: row.industry_type_major,
+    industryMinor: row.industry_minor,
     companyUrl: row.company_url,
     note: row.note,
     status: row.status as Selection["status"],
@@ -42,7 +46,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("selections")
     .select(
-      "id, company_name, position, industry, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -74,7 +78,9 @@ export async function POST(request: NextRequest) {
   const lengthError = findLengthViolation([
     ["companyName", body.companyName, 200],
     ["position", body.position, 200],
-    ["industry", body.industry ?? undefined, 50],
+    ["industryMajor", body.industryMajor ?? undefined, 50],
+    ["industryTypeMajor", body.industryTypeMajor ?? undefined, 50],
+    ["industryMinor", body.industryMinor ?? undefined, 50],
     ["companyUrl", body.companyUrl ?? undefined, 500],
     ["note", body.note ?? undefined, 4000],
   ]);
@@ -86,13 +92,15 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       company_name: body.companyName,
       position: body.position ?? "",
-      industry: body.industry ?? null,
+      industry_major: body.industryMajor ?? null,
+      industry_type_major: body.industryTypeMajor ?? null,
+      industry_minor: body.industryMinor ?? null,
       company_url: body.companyUrl ?? null,
       note: body.note ?? null,
       status: body.status ?? "応募",
     })
     .select(
-      "id, company_name, position, industry, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .single<SelectionRow>();
 

@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { selectionsApi } from "@/lib/selections/api";
-import { INDUSTRIES, guessIndustry } from "@/lib/selections/industry";
+import {
+  INDUSTRIES,
+  INDUSTRY_TYPES,
+  guessIndustry,
+  guessIndustryType,
+} from "@/lib/selections/industry";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -18,17 +23,25 @@ export default function NewSelectionPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [position, setPosition] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [industryTouched, setIndustryTouched] = useState(false);
+  const [industryMajor, setIndustryMajor] = useState("");
+  const [industryMajorTouched, setIndustryMajorTouched] = useState(false);
+  const [industryTypeMajor, setIndustryTypeMajor] = useState("");
+  const [industryTypeMajorTouched, setIndustryTypeMajorTouched] = useState(false);
+  const [industryMinor, setIndustryMinor] = useState("");
   const [companyUrl, setCompanyUrl] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleCompanyNameBlur() {
-    if (industryTouched || industry) return;
-    const guessed = guessIndustry(companyName);
-    if (guessed) setIndustry(guessed);
+    if (!industryMajorTouched && !industryMajor) {
+      const guessed = guessIndustry(companyName, industryMinor);
+      if (guessed) setIndustryMajor(guessed);
+    }
+    if (!industryTypeMajorTouched && !industryTypeMajor) {
+      const guessedType = guessIndustryType(companyName, industryMinor);
+      if (guessedType) setIndustryTypeMajor(guessedType);
+    }
   }
 
   async function handleCreate() {
@@ -39,7 +52,9 @@ export default function NewSelectionPage() {
       const created = await selectionsApi.create({
         companyName,
         position,
-        industry: industry || null,
+        industryMajor: industryMajor || null,
+        industryTypeMajor: industryTypeMajor || null,
+        industryMinor: industryMinor || null,
         companyUrl: companyUrl || null,
         note: note || null,
       });
@@ -74,10 +89,10 @@ export default function NewSelectionPage() {
       </Field>
       <Field label="業界（任意・企業名から自動推定、変更可）">
         <select
-          value={industry}
+          value={industryMajor}
           onChange={(e) => {
-            setIndustry(e.target.value);
-            setIndustryTouched(true);
+            setIndustryMajor(e.target.value);
+            setIndustryMajorTouched(true);
           }}
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         >
@@ -88,6 +103,31 @@ export default function NewSelectionPage() {
             </option>
           ))}
         </select>
+      </Field>
+      <Field label="業種・大分類（任意・企業名から自動推定、変更可）">
+        <select
+          value={industryTypeMajor}
+          onChange={(e) => {
+            setIndustryTypeMajor(e.target.value);
+            setIndustryTypeMajorTouched(true);
+          }}
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">未設定</option>
+          {INDUSTRY_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="業種・中分類（任意・より具体的な業種、自由記述）">
+        <input
+          value={industryMinor}
+          onChange={(e) => setIndustryMinor(e.target.value)}
+          placeholder="例：HRTech・SaaS"
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        />
       </Field>
       <Field label="企業URL（任意・求人ページや企業サイトなど）">
         <input

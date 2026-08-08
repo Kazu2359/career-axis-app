@@ -7,7 +7,9 @@ interface SelectionRow {
   id: string;
   company_name: string;
   position: string;
-  industry: string | null;
+  industry_major: string | null;
+  industry_type_major: string | null;
+  industry_minor: string | null;
   company_url: string | null;
   note: string | null;
   status: string;
@@ -22,7 +24,9 @@ function rowToSelection(row: SelectionRow): Selection {
     id: row.id,
     companyName: row.company_name,
     position: row.position,
-    industry: row.industry,
+    industryMajor: row.industry_major,
+    industryTypeMajor: row.industry_type_major,
+    industryMinor: row.industry_minor,
     companyUrl: row.company_url,
     note: row.note,
     status: row.status as Selection["status"],
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, company_name, position, industry, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .maybeSingle<SelectionRow>();
 
