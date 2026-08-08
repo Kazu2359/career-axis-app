@@ -177,6 +177,14 @@ export default function IndustriesPage() {
 
   const selectedMinorBubble = minorBubbles.find((b) => b.minor === selectedMinor);
 
+  const companyList = selectedMinorBubble
+    ? { label: selectedMinorBubble.minor, items: selectedMinorBubble.items }
+    : drilledTypeBubble
+      ? { label: drilledTypeBubble.type, items: drilledTypeBubble.items }
+      : drilledBubble
+        ? { label: drilledBubble.industry, items: drilledBubble.items }
+        : null;
+
   function handleDrillMajor(industry: string) {
     setDrilledMajor(industry);
     setDrilledType(null);
@@ -353,22 +361,24 @@ export default function IndustriesPage() {
             )}
           </div>
 
-          {selectedMinorBubble && (
+          {companyList && (
             <div className="rounded-lg border border-accent bg-panel px-4 py-3">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {selectedMinorBubble.minor}（{selectedMinorBubble.count}件）
+                  {companyList.label}（{companyList.items.length}件）
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMinor(null)}
-                  className="text-xs text-muted hover:text-foreground hover:underline"
-                >
-                  閉じる
-                </button>
+                {selectedMinorBubble && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMinor(null)}
+                    className="text-xs text-muted hover:text-foreground hover:underline"
+                  >
+                    絞り込み解除
+                  </button>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
-                {selectedMinorBubble.items.map((s) => (
+                {companyList.items.map((s) => (
                   <Link
                     key={s.id}
                     href={`/selections/${s.id}`}
