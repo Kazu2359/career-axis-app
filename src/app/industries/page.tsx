@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { selectionsApi } from "@/lib/selections/api";
 import type { Selection } from "@/lib/selections/types";
 import { guessIndustry, guessIndustryType } from "@/lib/selections/industry";
+import { statusBadgeClasses } from "@/lib/selections/types";
 import { AppNav } from "@/components/app/AppNav";
 import { WideShell, ErrorBanner, SecondaryButton } from "@/components/axis/ui";
 
@@ -51,6 +53,7 @@ export default function IndustriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guessing, setGuessing] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
 
   useEffect(() => {
     selectionsApi
@@ -119,6 +122,7 @@ export default function IndustriesPage() {
 
       return {
         industry,
+        items,
         count: items.length,
         offerCount: items.filter((s) => s.status === "内定").length,
         minorBreakdown,
@@ -132,6 +136,21 @@ export default function IndustriesPage() {
     const ratio = Math.sqrt(count / maxCount);
     return Math.round(MIN_SIZE + (MAX_SIZE - MIN_SIZE) * ratio);
   }
+
+  const selectedBubble = bubbles.find((b) => b.industry === selectedIndustry);
+
+  const selectedGroups = selectedBubble
+    ? (() => {
+        const byMinor = new Map<string, Selection[]>();
+        for (const item of selectedBubble.items) {
+          const key = item.industryMinor?.trim() || "詳細未設定";
+          const list = byMinor.get(key);
+          if (list) list.push(item);
+          else byMinor.set(key, [item]);
+        }
+        return Array.from(byMinor.entries()).sort((a, b) => b[1].length - a[1].length);
+      })()
+    : [];
 
   return (
     <WideShell>
@@ -167,13 +186,19 @@ export default function IndustriesPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 rounded-lg border border-border bg-panel px-4 py-10">
             {bubbles.map((b) => {
               const size = sizeFor(b.count);
+              const isSelected = b.industry === selectedIndustry;
               return (
-                <div
+                <button
                   key={b.industry}
+                  type="button"
+                  onClick={() =>
+                    setSelectedIndustry((cur) => (cur === b.industry ? null : b.industry))
+                  }
                   title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}`}
                   className={
                     "flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
-                    colorFor(b.industry)
+                    colorFor(b.industry) +
+                    (isSelected ? " ring-4 ring-accent ring-offset-2 ring-offset-panel" : "")
                   }
                   style={{ width: size, height: size }}
                 >
@@ -181,10 +206,59 @@ export default function IndustriesPage() {
                     {b.industry}
                   </span>
                   <span className="text-lg font-bold">{b.count}</span>
-                </div>
+                </button>
               );
             })}
           </div>
+
+          {selectedBubble && (
+            <div className="rounded-lg border border-accent bg-panel px-4 py-3">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {selectedBubble.industry}（{selectedBubble.count}件）
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIndustry(null)}
+                  className="text-xs text-muted hover:text-foreground hover:underline"
+                >
+                  閉じる
+                </button>
+              </div>
+              <div className="flex flex-col gap-4">
+                {selectedGroups.map(([minor, items]) => (
+                  <div key={minor} className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-muted">
+                      {minor}（{items.length}件）
+                    </span>
+                    <div className="flex flex-col gap-1.5">
+                      {items.map((s) => (
+                        <Link
+                          key={s.id}
+                          href={`/selections/${s.id}`}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm transition-colors hover:border-accent"
+                        >
+                          <span className="text-foreground">
+                            {s.companyName}
+                            {s.position && (
+                              <span className="ml-1.5 text-xs text-muted">
+                                {s.position}
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClasses(s.status)}`}
+                          >
+                            {s.status}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {bubbles.map((b) => (
