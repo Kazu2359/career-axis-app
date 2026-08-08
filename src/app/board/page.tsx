@@ -206,7 +206,7 @@ export default function BoardPage() {
   const milestones = computeMilestones(selections);
 
   return (
-    <WideShell className="max-w-[1800px]">
+    <WideShell className="max-w-[1650px]">
       <AppNav />
       <h1 className="text-xl font-bold text-foreground">進捗ボード</h1>
 
