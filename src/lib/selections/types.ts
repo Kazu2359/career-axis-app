@@ -33,6 +33,7 @@ export interface Selection {
   id: string;
   companyName: string;
   position: string;
+  positionCategory: string | null;
   industryMajor: string | null;
   industryTypeMajor: string | null;
   industryMinor: string | null;

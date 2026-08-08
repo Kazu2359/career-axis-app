@@ -7,6 +7,7 @@ interface SelectionRow {
   id: string;
   company_name: string;
   position: string;
+  position_category: string | null;
   industry_major: string | null;
   industry_type_major: string | null;
   industry_minor: string | null;
@@ -24,6 +25,7 @@ function rowToSelection(row: SelectionRow): Selection {
     id: row.id,
     companyName: row.company_name,
     position: row.position,
+    positionCategory: row.position_category,
     industryMajor: row.industry_major,
     industryTypeMajor: row.industry_type_major,
     industryMinor: row.industry_minor,
@@ -47,7 +49,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { data, error } = await supabase
     .from("selections")
     .select(
-      "id, company_name, position, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -76,6 +78,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const lengthError = findLengthViolation([
     ["companyName", body.companyName, 200],
     ["position", body.position, 200],
+    ["positionCategory", body.positionCategory ?? undefined, 50],
     ["industryMajor", body.industryMajor ?? undefined, 50],
     ["industryTypeMajor", body.industryTypeMajor ?? undefined, 50],
     ["industryMinor", body.industryMinor ?? undefined, 50],
@@ -87,6 +90,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (body.companyName !== undefined) update.company_name = body.companyName;
   if (body.position !== undefined) update.position = body.position;
+  if (body.positionCategory !== undefined)
+    update.position_category = body.positionCategory;
   if (body.industryMajor !== undefined) update.industry_major = body.industryMajor;
   if (body.industryTypeMajor !== undefined)
     update.industry_type_major = body.industryTypeMajor;
@@ -101,7 +106,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, company_name, position, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
+      "id, company_name, position, position_category, industry_major, industry_type_major, industry_minor, company_url, note, status, must_condition_check, want_fit_scores, created_at, updated_at",
     )
     .maybeSingle<SelectionRow>();
 

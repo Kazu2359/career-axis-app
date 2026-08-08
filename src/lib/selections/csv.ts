@@ -9,6 +9,7 @@ export interface ParsedSelectionRow {
   line: number;
   companyName: string;
   position: string;
+  positionCategory: string;
   industryMajor: string;
   industryTypeMajor: string;
   industryMinor: string;
@@ -27,6 +28,7 @@ export interface ParseSelectionsCsvResult {
   rows: ParsedSelectionRow[];
   errors: SelectionRowError[];
   hasPositionColumn: boolean;
+  hasPositionCategoryColumn: boolean;
   hasStatusColumn: boolean;
   hasIndustryMajorColumn: boolean;
   hasIndustryTypeMajorColumn: boolean;
@@ -38,6 +40,12 @@ export interface ParseSelectionsCsvResult {
 
 const COMPANY_HEADERS = ["企業名", "会社名", "company", "companyname", "company_name"];
 const POSITION_HEADERS = ["職種", "position"];
+const POSITION_CATEGORY_HEADERS = [
+  "職種カテゴリ",
+  "職種（カテゴリ）",
+  "position_category",
+  "positioncategory",
+];
 const STATUS_HEADERS = ["ステータス", "status"];
 const INDUSTRY_MAJOR_HEADERS = [
   "業界",
@@ -157,6 +165,7 @@ export function parseSelectionsCsv(
       rows: [],
       errors: [{ line: 0, message: "CSVが空です" }],
       hasPositionColumn: false,
+      hasPositionCategoryColumn: false,
       hasStatusColumn: false,
       hasIndustryMajorColumn: false,
       hasIndustryTypeMajorColumn: false,
@@ -171,6 +180,9 @@ export function parseSelectionsCsv(
   const header = rawHeader.map(normalizeHeader);
   const companyIdx = header.findIndex((h) => COMPANY_HEADERS.includes(h));
   const positionIdx = header.findIndex((h) => POSITION_HEADERS.includes(h));
+  const positionCategoryIdx = header.findIndex((h) =>
+    POSITION_CATEGORY_HEADERS.includes(h),
+  );
   const statusIdx = header.findIndex((h) => STATUS_HEADERS.includes(h));
   const industryMajorIdx = header.findIndex((h) => INDUSTRY_MAJOR_HEADERS.includes(h));
   const industryTypeMajorIdx = header.findIndex((h) =>
@@ -190,6 +202,7 @@ export function parseSelectionsCsv(
     if (
       idx === companyIdx ||
       idx === positionIdx ||
+      idx === positionCategoryIdx ||
       idx === statusIdx ||
       idx === industryMajorIdx ||
       idx === industryTypeMajorIdx ||
@@ -209,6 +222,7 @@ export function parseSelectionsCsv(
         { line: 1, message: "企業名の列が見つかりません（「企業名」または「company」）" },
       ],
       hasPositionColumn: positionIdx !== -1,
+      hasPositionCategoryColumn: positionCategoryIdx !== -1,
       hasStatusColumn: statusIdx !== -1,
       hasIndustryMajorColumn: industryMajorIdx !== -1,
       hasIndustryTypeMajorColumn: industryTypeMajorIdx !== -1,
@@ -234,6 +248,8 @@ export function parseSelectionsCsv(
     }
 
     const position = positionIdx === -1 ? "" : (cols[positionIdx] ?? "").trim();
+    const positionCategory =
+      positionCategoryIdx === -1 ? "" : (cols[positionCategoryIdx] ?? "").trim();
     const industryMajor =
       industryMajorIdx === -1 ? "" : (cols[industryMajorIdx] ?? "").trim();
     const industryTypeMajor =
@@ -276,6 +292,7 @@ export function parseSelectionsCsv(
       line,
       companyName,
       position,
+      positionCategory,
       industryMajor,
       industryTypeMajor,
       industryMinor,
@@ -290,6 +307,7 @@ export function parseSelectionsCsv(
     rows,
     errors,
     hasPositionColumn: positionIdx !== -1,
+    hasPositionCategoryColumn: positionCategoryIdx !== -1,
     hasStatusColumn: statusIdx !== -1,
     hasIndustryMajorColumn: industryMajorIdx !== -1,
     hasIndustryTypeMajorColumn: industryTypeMajorIdx !== -1,
@@ -311,6 +329,7 @@ export function buildSelectionsCsv(
   const header = [
     "企業名",
     "職種",
+    "職種カテゴリ",
     "業界大分類",
     "業種大分類",
     "業種中分類",
@@ -325,6 +344,7 @@ export function buildSelectionsCsv(
     const row = [
       s.companyName,
       s.position,
+      s.positionCategory ?? "",
       s.industryMajor ?? "",
       s.industryTypeMajor ?? "",
       s.industryMinor ?? "",

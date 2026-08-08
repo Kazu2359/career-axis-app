@@ -24,6 +24,7 @@ export const selectionsApi = {
   create: (input: {
     companyName: string;
     position: string;
+    positionCategory?: string | null;
     industryMajor?: string | null;
     industryTypeMajor?: string | null;
     industryMinor?: string | null;
@@ -41,6 +42,7 @@ export const selectionsApi = {
         Selection,
         | "companyName"
         | "position"
+        | "positionCategory"
         | "industryMajor"
         | "industryTypeMajor"
         | "industryMinor"

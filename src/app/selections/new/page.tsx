@@ -9,6 +9,7 @@ import {
   guessIndustry,
   guessIndustryType,
 } from "@/lib/selections/industry";
+import { POSITION_CATEGORIES, guessPositionCategory } from "@/lib/selections/position";
 import { AppNav } from "@/components/app/AppNav";
 import {
   AxisShell,
@@ -23,6 +24,8 @@ export default function NewSelectionPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [position, setPosition] = useState("");
+  const [positionCategory, setPositionCategory] = useState("");
+  const [positionCategoryTouched, setPositionCategoryTouched] = useState(false);
   const [industryMajor, setIndustryMajor] = useState("");
   const [industryMajorTouched, setIndustryMajorTouched] = useState(false);
   const [industryTypeMajor, setIndustryTypeMajor] = useState("");
@@ -44,6 +47,12 @@ export default function NewSelectionPage() {
     }
   }
 
+  function handlePositionBlur() {
+    if (positionCategoryTouched || positionCategory) return;
+    const guessed = guessPositionCategory(position, companyName);
+    if (guessed) setPositionCategory(guessed);
+  }
+
   async function handleCreate() {
     if (!companyName.trim()) return;
     setSaving(true);
@@ -52,6 +61,7 @@ export default function NewSelectionPage() {
       const created = await selectionsApi.create({
         companyName,
         position,
+        positionCategory: positionCategory || null,
         industryMajor: industryMajor || null,
         industryTypeMajor: industryTypeMajor || null,
         industryMinor: industryMinor || null,
@@ -84,8 +94,26 @@ export default function NewSelectionPage() {
         <input
           value={position}
           onChange={(e) => setPosition(e.target.value)}
+          onBlur={handlePositionBlur}
           className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
         />
+      </Field>
+      <Field label="職種カテゴリ（任意・職種名から自動推定、変更可）">
+        <select
+          value={positionCategory}
+          onChange={(e) => {
+            setPositionCategory(e.target.value);
+            setPositionCategoryTouched(true);
+          }}
+          className="rounded-lg border border-border bg-panel px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          <option value="">未設定</option>
+          {POSITION_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </Field>
       <Field label="業界（任意・企業名から自動推定、変更可）">
         <select

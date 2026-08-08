@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/api/auth";
 import { apiError, dbError } from "@/lib/api/errors";
 import { parseSelectionsCsv, type SelectionRowError } from "@/lib/selections/csv";
 import { guessIndustry, guessIndustryType } from "@/lib/selections/industry";
+import { guessPositionCategory } from "@/lib/selections/position";
 
 export async function POST(request: NextRequest) {
   const { supabase, user } = await requireUser();
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
     rows,
     errors,
     hasPositionColumn,
+    hasPositionCategoryColumn,
     hasStatusColumn,
     hasIndustryMajorColumn,
     hasIndustryTypeMajorColumn,
@@ -56,7 +58,9 @@ export async function POST(request: NextRequest) {
 
   const { data: existing, error: fetchError } = await supabase
     .from("selections")
-    .select("id, company_name, want_fit_scores, industry_major, industry_type_major")
+    .select(
+      "id, company_name, want_fit_scores, industry_major, industry_type_major, position_category",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -67,6 +71,7 @@ export async function POST(request: NextRequest) {
     wantFitScores: Record<string, number> | null;
     industryMajor: string | null;
     industryTypeMajor: string | null;
+    positionCategory: string | null;
   }
 
   const byCompany = new Map<string, ExistingSelection>();
@@ -77,6 +82,7 @@ export async function POST(request: NextRequest) {
         wantFitScores: row.want_fit_scores,
         industryMajor: row.industry_major,
         industryTypeMajor: row.industry_type_major,
+        positionCategory: row.position_category,
       });
     }
   }
@@ -92,12 +98,19 @@ export async function POST(request: NextRequest) {
     const guessedTypeMajor = hasIndustryTypeMajorColumn
       ? null
       : guessIndustryType(row.companyName, row.industryMinor);
+    const guessedPositionCategory = hasPositionCategoryColumn
+      ? null
+      : guessPositionCategory(row.position, row.companyName);
 
     if (existingSelection) {
       const update: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
       if (hasPositionColumn) update.position = row.position;
+      if (hasPositionCategoryColumn)
+        update.position_category = row.positionCategory || null;
+      else if (guessedPositionCategory && !existingSelection.positionCategory)
+        update.position_category = guessedPositionCategory;
       if (hasStatusColumn) update.status = row.status;
       if (hasIndustryMajorColumn) update.industry_major = row.industryMajor || null;
       else if (guessedMajor && !existingSelection.industryMajor)
@@ -135,6 +148,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           company_name: row.companyName,
           position: row.position,
+          position_category: row.positionCategory || guessedPositionCategory || null,
           industry_major: row.industryMajor || guessedMajor || null,
           industry_type_major: row.industryTypeMajor || guessedTypeMajor || null,
           industry_minor: row.industryMinor || null,
@@ -143,11 +157,12 @@ export async function POST(request: NextRequest) {
           status: row.status,
           want_fit_scores: row.wantScores,
         })
-        .select("id, industry_major, industry_type_major")
+        .select("id, industry_major, industry_type_major, position_category")
         .single<{
           id: string;
           industry_major: string | null;
           industry_type_major: string | null;
+          position_category: string | null;
         }>();
 
       if (error) {
@@ -160,6 +175,7 @@ export async function POST(request: NextRequest) {
         wantFitScores: row.wantScores,
         industryMajor: data.industry_major,
         industryTypeMajor: data.industry_type_major,
+        positionCategory: data.position_category,
       });
       created++;
     }

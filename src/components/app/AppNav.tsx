@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/selections", label: "選考プロセス" },
   { href: "/board", label: "進捗ボード" },
   { href: "/industries", label: "業界マップ" },
+  { href: "/positions", label: "職種マップ" },
   { href: "/schedules", label: "スケジュール" },
 ];
 
