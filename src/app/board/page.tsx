@@ -54,6 +54,7 @@ interface Milestone {
   key: string;
   label: string;
   achieved: boolean;
+  count?: number;
 }
 
 function computeQuestPath(selections: Selection[]): Milestone[] {
@@ -87,6 +88,15 @@ function computeQuestPath(selections: Selection[]): Milestone[] {
 }
 
 function computeBadges(selections: Selection[]): Milestone[] {
+  function reachedAtLeastCount(status: SelectionStatus): number {
+    const idx = FUNNEL_STATUSES.indexOf(status);
+    return selections.filter((s) => FUNNEL_STATUSES.indexOf(s.status) >= idx)
+      .length;
+  }
+  const firstInterviewCount = reachedAtLeastCount("一次面接");
+  const secondInterviewCount = reachedAtLeastCount("二次面接");
+  const offerCount = selections.filter((s) => s.status === "内定").length;
+
   return [
     { key: "five-apps", label: "5社応募", achieved: selections.length >= 5 },
     { key: "ten-apps", label: "10社応募", achieved: selections.length >= 10 },
@@ -94,6 +104,24 @@ function computeBadges(selections: Selection[]): Milestone[] {
       key: "thirty-apps",
       label: "30社応募",
       achieved: selections.length >= 30,
+    },
+    {
+      key: "first-interview-count",
+      label: "一次面接突破",
+      achieved: firstInterviewCount > 0,
+      count: firstInterviewCount,
+    },
+    {
+      key: "second-interview-count",
+      label: "二次面接突破",
+      achieved: secondInterviewCount > 0,
+      count: secondInterviewCount,
+    },
+    {
+      key: "offer-count",
+      label: "内定",
+      achieved: offerCount > 0,
+      count: offerCount,
     },
   ];
 }
@@ -432,6 +460,9 @@ export default function BoardPage() {
                     >
                       {b.label}
                     </span>
+                    {b.count !== undefined && b.achieved && (
+                      <span className="text-[10px] text-muted">{b.count}社</span>
+                    )}
                   </div>
                 ))}
               </div>
