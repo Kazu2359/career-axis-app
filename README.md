@@ -18,6 +18,17 @@ npm run dev
 
 Next.js（App Router） + TypeScript + Tailwind CSS + Supabase（Postgres/Auth）。詳細は要件定義書 §7・§8 を参照。
 
+## セキュリティ対応状況（公開サービス化対応）
+
+| 項目 | 状態 |
+|---|---|
+| RLS + アプリ側user_idスコープ | ✅（元々実装済み） |
+| DBエラーメッセージの非公開化 | ✅ |
+| CSVインポート行数上限 | ✅ |
+| 自由入力テキストの文字数上限（API + DB制約） | ✅（今回DB側も完了） |
+| パスワード最小8文字 | ✅ |
+| CAPTCHA（Cloudflare Turnstile） | ✅ |
+
 ## デプロイ・本番設定（Supabase/Vercelダッシュボード側）
 
 コードのpushだけでは反映されない、ダッシュボード側の手動設定。新規セットアップ時・環境再構築時に確認する。
