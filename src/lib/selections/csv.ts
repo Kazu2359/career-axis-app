@@ -36,7 +36,17 @@ const COMPANY_HEADERS = ["企業名", "会社名", "company", "companyname", "co
 const POSITION_HEADERS = ["職種", "position"];
 const STATUS_HEADERS = ["ステータス", "status"];
 const INDUSTRY_HEADERS = ["業界", "industry"];
-const COMPANY_URL_HEADERS = ["企業url", "企業サイト", "求人url", "url", "company_url", "companyurl"];
+const COMPANY_URL_HEADERS = [
+  "企業url",
+  "企業サイト",
+  "求人url",
+  "url",
+  "company_url",
+  "companyurl",
+  "参照元",
+  "参照元（企業公式）",
+  "参照元(企業公式)",
+];
 const NOTE_HEADERS = ["メモ", "備考", "note"];
 
 function normalizeHeader(h: string): string {
