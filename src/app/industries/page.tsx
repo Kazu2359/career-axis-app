@@ -54,6 +54,7 @@ export default function IndustriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [guessing, setGuessing] = useState(false);
   const [drilledMajor, setDrilledMajor] = useState<string | null>(null);
+  const [drilledType, setDrilledType] = useState<string | null>(null);
   const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
 
   useEffect(() => {
@@ -140,10 +141,28 @@ export default function IndustriesPage() {
 
   const drilledBubble = bubbles.find((b) => b.industry === drilledMajor);
 
-  const minorBubbles = drilledBubble
+  const typeBubbles = drilledBubble
+    ? (() => {
+        const byType = new Map<string, Selection[]>();
+        for (const item of drilledBubble.items) {
+          const key = item.industryTypeMajor?.trim() || "未設定";
+          const list = byType.get(key);
+          if (list) list.push(item);
+          else byType.set(key, [item]);
+        }
+        return Array.from(byType.entries())
+          .map(([type, items]) => ({ type, items, count: items.length }))
+          .sort((a, b) => b.count - a.count);
+      })()
+    : [];
+  const typeMaxCount = Math.max(1, ...typeBubbles.map((b) => b.count));
+
+  const drilledTypeBubble = typeBubbles.find((b) => b.type === drilledType);
+
+  const minorBubbles = drilledTypeBubble
     ? (() => {
         const byMinor = new Map<string, Selection[]>();
-        for (const item of drilledBubble.items) {
+        for (const item of drilledTypeBubble.items) {
           const key = item.industryMinor?.trim() || "詳細未設定";
           const list = byMinor.get(key);
           if (list) list.push(item);
@@ -158,13 +177,25 @@ export default function IndustriesPage() {
 
   const selectedMinorBubble = minorBubbles.find((b) => b.minor === selectedMinor);
 
-  function handleDrill(industry: string) {
+  function handleDrillMajor(industry: string) {
     setDrilledMajor(industry);
+    setDrilledType(null);
     setSelectedMinor(null);
   }
 
-  function handleBack() {
+  function handleDrillType(type: string) {
+    setDrilledType(type);
+    setSelectedMinor(null);
+  }
+
+  function handleBackToMajor() {
     setDrilledMajor(null);
+    setDrilledType(null);
+    setSelectedMinor(null);
+  }
+
+  function handleBackToType() {
+    setDrilledType(null);
     setSelectedMinor(null);
   }
 
@@ -211,8 +242,8 @@ export default function IndustriesPage() {
                     <button
                       key={b.industry}
                       type="button"
-                      onClick={() => handleDrill(b.industry)}
-                      title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}\nクリックで業種の内訳を表示`}
+                      onClick={() => handleDrillMajor(b.industry)}
+                      title={`${b.industry}：${b.count}件${b.offerCount > 0 ? `（内定${b.offerCount}件）` : ""}${b.minorBreakdown.length > 0 ? `\n内訳：${b.minorBreakdown.join("、")}` : ""}\nクリックで業種・大分類の内訳を表示`}
                       style={{ width: size, height: size, animationDelay: `${i * 30}ms` }}
                       className={
                         "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
@@ -227,12 +258,56 @@ export default function IndustriesPage() {
                   );
                 })}
               </div>
-            ) : (
-              <div key={drilledBubble.industry} className="flex flex-col gap-4">
+            ) : !drilledTypeBubble ? (
+              <div key={`type-${drilledBubble.industry}`} className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     type="button"
-                    onClick={handleBack}
+                    onClick={handleBackToMajor}
+                    className="animate-bubble-pop flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full border-2 border-dashed border-muted text-center text-muted shadow-sm transition-transform hover:scale-105 hover:text-foreground"
+                  >
+                    <span className="text-lg">←</span>
+                    <span className="text-[10px]">戻る</span>
+                  </button>
+                  {typeBubbles.map((b, i) => {
+                    const size = sizeFor(b.count, typeMaxCount);
+                    return (
+                      <button
+                        key={b.type}
+                        type="button"
+                        onClick={() => handleDrillType(b.type)}
+                        title={`${b.type}：${b.count}件\nクリックで業種・中分類の内訳を表示`}
+                        style={{
+                          width: size,
+                          height: size,
+                          animationDelay: `${(i + 1) * 30}ms`,
+                        }}
+                        className={
+                          "animate-bubble-pop flex shrink-0 flex-col items-center justify-center rounded-full border-2 text-center shadow-sm transition-transform hover:scale-105 " +
+                          colorFor(drilledBubble.industry)
+                        }
+                      >
+                        <span className="px-2 text-xs font-semibold leading-tight">
+                          {b.type}
+                        </span>
+                        <span className="text-lg font-bold">{b.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-center text-xs text-muted">
+                  {drilledBubble.industry}（{drilledBubble.count}件）の業種・大分類内訳
+                </p>
+              </div>
+            ) : (
+              <div
+                key={`minor-${drilledBubble.industry}-${drilledTypeBubble.type}`}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleBackToType}
                     className="animate-bubble-pop flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full border-2 border-dashed border-muted text-center text-muted shadow-sm transition-transform hover:scale-105 hover:text-foreground"
                   >
                     <span className="text-lg">←</span>
@@ -271,7 +346,8 @@ export default function IndustriesPage() {
                   })}
                 </div>
                 <p className="text-center text-xs text-muted">
-                  {drilledBubble.industry}（{drilledBubble.count}件）の業種内訳
+                  {drilledBubble.industry} ／ {drilledTypeBubble.type}（
+                  {drilledTypeBubble.count}件）の業種・中分類内訳
                 </p>
               </div>
             )}
