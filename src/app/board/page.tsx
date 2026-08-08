@@ -36,18 +36,12 @@ const FUNNEL_STATUSES: SelectionStatus[] = [
   "内定",
 ];
 
-const STREAK_DAYS = 70;
-
 function startOfWeek(d: Date): Date {
   const day = d.getDay();
   const diff = (day === 0 ? -6 : 1) - day;
   const monday = new Date(d.getTime() + diff * 86_400_000);
   monday.setHours(0, 0, 0, 0);
   return monday;
-}
-
-function dateKey(d: Date) {
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
 interface Milestone {
@@ -222,26 +216,6 @@ export default function BoardPage() {
   const rejectedCount = selections.filter((s) => s.status === "不採用").length;
   const declinedCount = selections.filter((s) => s.status === "辞退").length;
 
-  const streakDays = Array.from(
-    { length: STREAK_DAYS },
-    (_, i) => new Date(today.getTime() - (STREAK_DAYS - 1 - i) * 86_400_000),
-  );
-  const activityByDay = new Map<string, Set<string>>();
-  for (const s of selections) {
-    for (const iso of [s.createdAt, s.updatedAt]) {
-      const key = dateKey(new Date(iso));
-      const set = activityByDay.get(key);
-      if (set) set.add(s.id);
-      else activityByDay.set(key, new Set([s.id]));
-    }
-  }
-  let currentStreak = 0;
-  for (let i = streakDays.length - 1; i >= 0; i--) {
-    const key = dateKey(streakDays[i]);
-    if ((activityByDay.get(key)?.size ?? 0) > 0) currentStreak++;
-    else break;
-  }
-
   const milestones = computeMilestones(selections);
 
   return (
@@ -348,33 +322,6 @@ export default function BoardPage() {
                 {declinedCount > 0 && <span>辞退: {declinedCount}件</span>}
               </div>
             )}
-          </div>
-
-          <div className="rounded-lg border border-border bg-panel px-4 py-3">
-            <h2 className="mb-2 text-sm font-semibold text-foreground">
-              アクティビティ（連続{currentStreak}日）
-            </h2>
-            <div className="grid grid-flow-col grid-rows-7 gap-1">
-              {streakDays.map((d) => {
-                const key = dateKey(d);
-                const count = activityByDay.get(key)?.size ?? 0;
-                const level =
-                  count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3;
-                const levelClass = [
-                  "bg-background",
-                  "bg-accent-soft",
-                  "bg-accent/60",
-                  "bg-accent",
-                ][level];
-                return (
-                  <div
-                    key={key}
-                    title={`${d.getMonth() + 1}/${d.getDate()}：${count}件`}
-                    className={`h-3 w-3 rounded-sm ${levelClass}`}
-                  />
-                );
-              })}
-            </div>
           </div>
 
           <div className="rounded-lg border border-border bg-panel px-4 py-3">
