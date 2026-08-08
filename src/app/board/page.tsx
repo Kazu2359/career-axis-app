@@ -93,8 +93,11 @@ function computeBadges(selections: Selection[]): Milestone[] {
     return selections.filter((s) => FUNNEL_STATUSES.indexOf(s.status) >= idx)
       .length;
   }
-  const firstInterviewCount = reachedAtLeastCount("一次面接");
-  const secondInterviewCount = reachedAtLeastCount("二次面接");
+  // 「突破」= 次の段階に進んだ数。書類選考突破は一次面接以降に進んだ数、
+  // 一次面接突破は二次面接以降に進んだ数、二次面接突破は最終面接以降に進んだ数。
+  const documentPassCount = reachedAtLeastCount("一次面接");
+  const firstInterviewCount = reachedAtLeastCount("二次面接");
+  const secondInterviewCount = reachedAtLeastCount("最終面接");
   const offerCount = selections.filter((s) => s.status === "内定").length;
 
   return [
@@ -104,6 +107,12 @@ function computeBadges(selections: Selection[]): Milestone[] {
       key: "thirty-apps",
       label: "30社応募",
       achieved: selections.length >= 30,
+    },
+    {
+      key: "document-pass-count",
+      label: "書類選考突破",
+      achieved: documentPassCount > 0,
+      count: documentPassCount,
     },
     {
       key: "first-interview-count",
